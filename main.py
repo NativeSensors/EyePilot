@@ -15,6 +15,8 @@ class MyMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.right_buttons = []
+
         self.setWindowTitle("My App")
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setGeometry(100, 100, 800, 600)
@@ -46,36 +48,37 @@ class MyMainWindow(QMainWindow):
         main_layout.addWidget(right_frame, stretch=0)
 
         # Add buttons and options to the right frame
-        button1 = QPushButton("Calibration")
-        button2 = QPushButton("Settings")
-        button3 = QPushButton("Some more text")
+
+        self.right_layout = QVBoxLayout()
+        self.right_layout.setAlignment(Qt.AlignCenter)
+        right_frame.setStyleSheet("background-color: rgba(26, 32, 48, 0.8);")
+        right_frame.setLayout(self.right_layout)
+
+        self.__add_button("Start")
+        self.__add_button("Calibration")
+        self.__add_button("Settings")
+        self.__add_button("Customize")
+
+    def __add_button(self,name,signal=None):
+        self.right_buttons.append(QPushButton(name))
 
         button_style = """
             QPushButton {
-                color: Black;
-                font-size: 20px;
+                color: white;
+                font-size: 25px;
                 background-color: rgba(255, 255, 255, 0.0);
                 width: 200px;
+                height: 45px;
             }
 
             QPushButton:hover {
-                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(255, 255, 255, 0.5), stop:1 rgba(255, 255, 255, 0.3), stop:2 rgba(255, 255, 2, 0.0));
+                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(56, 60, 79, 0.5), stop:1 rgba(56, 60, 79, 0.3), stop:2 rgba(56, 60, 79, 0.0));
                 border-radius: 5px;
             }
         """
 
-        button1.setStyleSheet(button_style)
-        button2.setStyleSheet(button_style)
-        button3.setStyleSheet(button_style)
-
-        right_layout = QVBoxLayout()
-        right_layout.setAlignment(Qt.AlignCenter)
-        right_frame.setStyleSheet("background-color: rgba(255, 255, 255, 0.2);")
-        right_frame.setLayout(right_layout)
-        right_layout.addWidget(button1)
-        right_layout.addWidget(button2)
-        right_layout.addWidget(button3)
-
+        self.right_buttons[-1].setStyleSheet(button_style)
+        self.right_layout.addWidget(self.right_buttons[-1])
 
 
 if __name__ == "__main__":
