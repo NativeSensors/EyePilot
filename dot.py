@@ -1,12 +1,14 @@
 import sys
 from PySide2.QtWidgets import QApplication, QWidget
-from PySide2.QtGui import QPainter, QColor, QBrush, QPen
+from PySide2.QtGui import QPainter, QColor, QBrush, QPen, QIcon
 from PySide2.QtCore import Qt, QTimer
 import random
 
 class CircleWidget(QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowIcon(QIcon("icon.png"))
+
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_TransparentForMouseEvents)

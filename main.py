@@ -2,6 +2,7 @@ import time
 import sys
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QToolBar
 from PySide2.QtCore import Qt, QTimer
+from PySide2.QtGui import QIcon
 
 from BlurWindow.blurWindow import GlobalBlur
 from button import EyePilotButton, EyePilotButtonColorChoice
@@ -9,18 +10,25 @@ from calibration import Calibration
 
 from dot import CircleWidget
 
+from tracker import Tracker
+
 class MyMainWindow(QMainWindow):
 
     def moveEvent(self, event) -> None:
         time.sleep(0.02)  # sleep for 20ms
+        layout_center  = self.left_layout.geometry().center()
+        self.tracker.setPosition(self.geometry().x() + 175, self.geometry().y() + 200)
 
     def resizeEvent(self, event) -> None:
         time.sleep(0.02)  # sleep for 20ms
+        layout_center  = self.left_layout.geometry().center()
+        self.tracker.setPosition(self.geometry().x() + 175, self.geometry().y() + 200)
 
     def __init__(self):
         super().__init__()
+        self.setWindowIcon(QIcon("icon.png"))
 
-        self.setWindowTitle("My App")
+        self.setWindowTitle("EyePilot")
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setGeometry(100, 100, 800, 600)
 
@@ -40,40 +48,79 @@ class MyMainWindow(QMainWindow):
         label_left = QLabel("EyePilot")
         label_left.setStyleSheet("color: white; font-size: 40px;")
         label_left.setAlignment(Qt.AlignCenter)
-        left_layout = QVBoxLayout()
-        left_frame.setLayout(left_layout)
-        left_layout.addWidget(label_left)
+        self.left_layout = QVBoxLayout()
+        left_frame.setLayout(self.left_layout)
+        self.left_layout.addWidget(label_left)
 
         # Create a frame to hold right side content
         right_frame = RightSideMenu()
         main_layout.addWidget(right_frame, stretch=1)
 
         self.landing_spot = CircleWidget()
-        layout_center  = left_layout.geometry().center()
+        layout_center  = self.left_layout.geometry().center()
         self.landing_spot.setPosition(layout_center.x() + 175, layout_center.y() + 200)
         self.landing_spot.setColor(102,102,102)
         self.landing_spot.setParent(self)
 
         self.tracker = CircleWidget()
-        layout_center  = left_layout.geometry().center()
-        self.tracker.setPosition(layout_center.x() + 175, layout_center.y() + 200)
+        layout_center  = self.left_layout.geometry().center()
+        self.tracker.setPosition(self.geometry().x() + layout_center.x() + 175, self.geometry().y() + layout_center.y() + 200)
         self.tracker.setColor(150,150,150)
-        self.tracker.setParent(self)
+        self.tracker.setWindowFlag(Qt.WindowStaysOnTopHint)
+        self.tracker.show()
 
         right_frame.setSignal("Customize","ColorChange",signal=self.changeTrackerColor)
-        # Add buttons and options to the right frame
+        right_frame.setSignal("Main","Calibration",signal=self.show_calibration)
+        right_frame.setSignal("Main","Start",signal=self.start)
+
+        self.calibrationWidget = Calibration()
+        self.calibrationWidget.setOnQuit(self.stop_calibration)
 
         # Start a timer to update the position periodically
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.main_loop)
         self.timer.start(30)  # Update every second
 
+        self.eyeTracker = Tracker()
+        self.running = False
+        self.calibrationON = False
+
+    def show_calibration(self):
+        self.calibrationON = True
+        self.eyeTracker.calibrationOn()
+        self.calibrationWidget.show()
+
+    def stop_calibration(self):
+        self.calibrationON = False
+        self.eyeTracker.calibrationOff()
 
     def changeTrackerColor(self,color):
         self.tracker.setColor(color[0],color[1],color[2])
 
     def main_loop(self):
-        pass
+        if self.running:
+            point, calibration = self.eyeTracker.step()
+
+            self.tracker.setPosition(point[0], point[1])
+
+            if self.calibrationON:
+                self.calibrationWidget.setPosition(point[0], point[1])
+                self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
+
+    def start(self):
+        self.eyeTracker.start()
+        self.running = True
+
+    def stop(self):
+        self.running = False
+        self.eyeTracker.stop()
+        self.tracker.close()
+
+    def closeEvent(self, event):
+        # Call your function or perform cleanup here
+        self.stop()
+        # Call the base class closeEvent to ensure default behavior
+        super().closeEvent(event)
 
 class RightSideMenu(QFrame):
     def __init__(self):
@@ -150,15 +197,10 @@ class MainMenu(Menu):
     def __init__(self):
         super().__init__()
 
-        self.calibrationWidget = Calibration()
-
         self.add_button("Start")
-        self.add_button("Calibration",signal = self.show_calibration)
+        self.add_button("Calibration")
         self.add_button("Settings")
         self.add_button("Customize")
-
-    def show_calibration(self):
-        self.calibrationWidget.show()
 
 class Settings(Menu):
 

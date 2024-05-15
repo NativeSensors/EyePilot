@@ -11,6 +11,7 @@ import random
 class Calibration(QWidget):
     def __init__(self):
         super().__init__()
+        self.onQuit = None
 
         # Set the window title
         self.setWindowTitle("Full Screen Widget")
@@ -25,13 +26,18 @@ class Calibration(QWidget):
 
         GlobalBlur(self.winId(),Dark=True,QWidget=self)
 
-        main_layout.addWidget(EyePilotButton("Quit", signal = self.close))
+        main_layout.addWidget(EyePilotButton("Quit", signal = self.quit))
         self.setFullScreen()
 
         self.calibration_point = CircleWidget()
         self.calibration_point.setColor(255,0,0)
         self.calibration_point.show()
         self.calibration_point.setParent(self)
+
+        self.point = CircleWidget()
+        self.point.setColor(120,120,120)
+        self.point.show()
+        self.point.setParent(self)
         # main_layout.addWidget(self.calibration_point)
         # Set the window size to full screen
 
@@ -45,8 +51,19 @@ class Calibration(QWidget):
         # Set the size of the widget to match the screen size
         self.setGeometry(screen_geometry)
 
-    def setPosition(self,x,y):
+    def setPositionFit(self,x,y):
         self.calibration_point.setPosition(x,y)
+
+    def setPosition(self,x,y):
+        self.point.setPosition(x,y)
+
+    def quit(self):
+        if self.onQuit:
+            self.onQuit()
+        self.close()
+
+    def setOnQuit(self,signal):
+        self.onQuit = signal
 
 if __name__ == "__main__":
     # Create the application
