@@ -35,7 +35,6 @@ class EyePilotButton(QPushButton):
 
     def click(self):
 
-        print(f"click: {self.signal}")
         if self.signal:
             self.signal()
 
@@ -86,7 +85,6 @@ class EyePilotButtonColorChoice(QPushButton):
         self.clicked.connect(self.click)
 
     def click(self):
-        print(f"clicked: {self.color}")
         if self.signal:
             self.signal(self.color)
 

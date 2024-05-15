@@ -57,7 +57,6 @@ class Tracker:
         self.monitor = list(filter(lambda monitor: monitor.is_primary == True ,get_monitors()))[0]
         self.gestures = EyeGestures(285,115,80,15)
 
-        self.running = False
         self.calibration = False
 
         self.CN = 5
@@ -103,15 +102,15 @@ class Tracker:
 
     def start(self):
         self.cap = VideoCapture(0)
-        self.running = True
 
         key_points, classic_point = self.getLandmarks()
         self.clb.add(key_points,self.fit_point,classic_point,self.fit_point)
 
     def stop(self):
-        if self.cap:
+        if self.cap != None:
             self.cap.close()
-        self.running = False
+            # why this works here but release do not works in lib
+            self.cap.cap.release()
 
     def calibrationOn(self):
         self.calibration = True

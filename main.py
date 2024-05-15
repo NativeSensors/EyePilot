@@ -121,6 +121,7 @@ class MyMainWindow(QMainWindow):
         self.stop()
         # Call the base class closeEvent to ensure default behavior
         super().closeEvent(event)
+        quit()
 
 class RightSideMenu(QFrame):
     def __init__(self):
