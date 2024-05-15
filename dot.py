@@ -27,6 +27,7 @@ class CircleWidget(QWidget):
         new_x = self.to_x
         new_y = self.to_y
         self.move(new_x, new_y)
+        self.repaint()
 
     def setPosition(self,x,y):
         self.to_x = x
