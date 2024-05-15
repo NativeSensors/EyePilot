@@ -9,16 +9,18 @@ class CircleWidget(QWidget):
         super().__init__()
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setGeometry(100, 100, 300, 300)
-        # Start a timer to update the position periodically
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_position)
-        self.timer.start(30)  # Update every second
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setGeometry(0, 0, 60, 60)
 
         self.setColor(35, 67, 154)
 
         self.to_y = self.x()
         self.to_x = self.y()
+
+        # Start a timer to update the position periodically
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_position)
+        self.timer.start(30)  # Update every second
 
     def update_position(self):
         # Randomly generate new position within the screen boundaries

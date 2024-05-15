@@ -1,9 +1,13 @@
 import time
 import sys
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QFrame, QPushButton, QLabel, QToolBar
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QToolBar
 from PySide2.QtCore import Qt
 
 from BlurWindow.blurWindow import GlobalBlur
+from button import EyePilotButton, EyePilotButtonColorChoice
+from calibration import Calibration
+
+from dot import CircleWidget
 
 class MyMainWindow(QMainWindow):
 
@@ -15,13 +19,10 @@ class MyMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.right_buttons = []
 
         self.setWindowTitle("My App")
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setGeometry(100, 100, 800, 600)
-
-        # Apply stylesheet to mimic system colors for title bar
 
         GlobalBlur(self.winId(),Dark=True,QWidget=self)
 
@@ -33,7 +34,7 @@ class MyMainWindow(QMainWindow):
 
         # Create a frame to hold left side content
         left_frame = QFrame()
-        main_layout.addWidget(left_frame, stretch=0)
+        main_layout.addWidget(left_frame, stretch=1)
 
         # Add a label to left frame (optional)
         label_left = QLabel("EyePilot")
@@ -44,42 +45,123 @@ class MyMainWindow(QMainWindow):
         left_layout.addWidget(label_left)
 
         # Create a frame to hold right side content
-        right_frame = QFrame()
-        main_layout.addWidget(right_frame, stretch=0)
+        right_frame = RightSideMenu()
+        main_layout.addWidget(right_frame, stretch=1)
 
+        self.tracker = CircleWidget()
+        layout_center  = left_layout.geometry().center()
+        self.tracker.setPosition(layout_center.x() + 175, layout_center.y() + 200)
+        self.tracker.setColor(102,102,43)
+        self.tracker.setParent(self)
+
+        self.landing_spot = CircleWidget()
+        layout_center  = left_layout.geometry().center()
+        self.landing_spot.setPosition(layout_center.x() + 175, layout_center.y() + 200)
+        self.landing_spot.setColor(102,102,102)
+        self.landing_spot.setParent(self)
         # Add buttons and options to the right frame
 
+class RightSideMenu(QFrame):
+    def __init__(self):
+        super().__init__()
+
+        self.menu_stack  = QStackedLayout()
+        self.setLayout(self.menu_stack)
+        self.setStyleSheet("background-color: rgba(26, 32, 48, 0.8);")
+
+        mainMenu = MainMenu()
+        settings = Settings()
+        customize = Customize()
+        self.menu_stack.addWidget(mainMenu)
+        self.menu_stack.addWidget(settings)
+        self.menu_stack.addWidget(customize)
+        self.menu_stack.setCurrentIndex(0)
+        self.menus = 3
+
+        mainMenu.setSignal("Settings", lambda : self.switchMenu(1))
+        mainMenu.setSignal("Customize", lambda : self.switchMenu(2))
+
+        settings.setSignal("Back", lambda : self.switchMenu(0))
+        customize.setSignal("Back", lambda : self.switchMenu(0))
+
+
+    def switchMenu(self,index):
+        if self.menus <= index:
+            return
+
+        self.menu_stack.setCurrentIndex(index)
+
+
+class Menu(QFrame):
+
+    def __init__(self):
+        super().__init__()
+
         self.right_layout = QVBoxLayout()
-        self.right_layout.setAlignment(Qt.AlignCenter)
-        right_frame.setStyleSheet("background-color: rgba(26, 32, 48, 0.8);")
-        right_frame.setLayout(self.right_layout)
+        self.right_layout.setAlignment(Qt.AlignCenter | Qt.AlignHCenter)
+        self.setLayout(self.right_layout)
 
-        self.__add_button("Start")
-        self.__add_button("Calibration")
-        self.__add_button("Settings")
-        self.__add_button("Customize")
+        self.right_buttons = []
 
-    def __add_button(self,name,signal=None):
-        self.right_buttons.append(QPushButton(name))
+    def setSignal(self,button_name, signal):
+        button = [button for button in self.right_buttons if button.getText() == button_name]
+        button[0].addSignal(signal)
 
-        button_style = """
-            QPushButton {
-                color: white;
-                font-size: 25px;
-                background-color: rgba(255, 255, 255, 0.0);
-                width: 200px;
-                height: 45px;
-            }
+    def add_button(self,name,signal=None):
+        tmp_layout = QHBoxLayout()
+        tmp_layout.setAlignment(Qt.AlignCenter | Qt.AlignHCenter)
+        self.right_buttons.append(EyePilotButton(name,signal = signal))
+        tmp_layout.addWidget(self.right_buttons[-1])
+        self.right_layout.addLayout(tmp_layout)
 
-            QPushButton:hover {
-                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(56, 60, 79, 0.5), stop:1 rgba(56, 60, 79, 0.3), stop:2 rgba(56, 60, 79, 0.0));
-                border-radius: 5px;
-            }
-        """
+    def add_custom(self,button):
+        tmp_layout = QHBoxLayout()
+        tmp_layout.setAlignment(Qt.AlignCenter | Qt.AlignHCenter)
+        self.right_buttons.append(button)
+        tmp_layout.addWidget(self.right_buttons[-1])
+        self.right_layout.addLayout(tmp_layout)
 
-        self.right_buttons[-1].setStyleSheet(button_style)
-        self.right_layout.addWidget(self.right_buttons[-1])
+class MainMenu(Menu):
 
+    def __init__(self):
+        super().__init__()
+
+        self.calibrationWidget = Calibration()
+
+        self.add_button("Start")
+        self.add_button("Calibration",signal = self.show_calibration)
+        self.add_button("Settings")
+        self.add_button("Customize")
+
+    def show_calibration(self):
+        self.calibrationWidget.show()
+
+class Settings(Menu):
+
+    def __init__(self):
+        super().__init__()
+
+        self.calibrationWidget = Calibration()
+
+        self.add_button("Back")
+class Customize(Menu):
+
+    def __init__(self):
+        super().__init__()
+
+        self.calibrationWidget = Calibration()
+
+        DEEPSEA_BLUE = (10,50,150)
+        STEEL_GREY = (150,150,150)
+        CREAMY_ORANGE = (150,100,50)
+        LEAFY_GREEN = (100,150,100)
+
+        self.add_custom(EyePilotButtonColorChoice("DeepSea Blue",color=DEEPSEA_BLUE))
+        self.add_custom(EyePilotButtonColorChoice("Steel Grey",color=STEEL_GREY))
+        self.add_custom(EyePilotButtonColorChoice("Creamy Orange",color=CREAMY_ORANGE))
+        self.add_custom(EyePilotButtonColorChoice("Leafy Green",color=LEAFY_GREEN))
+
+        self.add_button("Back")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
