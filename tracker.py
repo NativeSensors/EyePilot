@@ -49,6 +49,12 @@ def euclidean_distance(point1, point2):
 
 class Tracker:
 
+    PRECISION_LIMIT = 50
+    PRECISION_STEP = 10
+    ACCEPTANCE_RADIUS = 500
+    CALIBRATION_RADIUS = 1000
+    EYEGESTURES_CALIBRATION_THRESH = 850
+
     def __init__(self):
 
         self.clb = Calibrator()
@@ -73,12 +79,12 @@ class Tracker:
         self.iterator = 0
         self.fix = 0.8
 
-        self.precision_limit = 50
-        self.precision_step = 15
-        self.acceptance_radius = 200
-        self.calibration_radius = 500
+        self.precision_limit = self.PRECISION_LIMIT
+        self.precision_step = self.PRECISION_STEP
+        self.acceptance_radius = self.ACCEPTANCE_RADIUS
+        self.calibration_radius = self.CALIBRATION_RADIUS
         # after corssing this thresh we are disabling classical calib
-        self.eyegestures_calibration_threshold = 400
+        self.eyegestures_calibration_threshold = self.EYEGESTURES_CALIBRATION_THRESH
 
     def getLandmarks(self,calibrate = False):
 
@@ -109,10 +115,10 @@ class Tracker:
             return None, None
 
     def increase_precision(self):
-        if self.calibration_radius > self.precision_limit:
-            self.calibration_radius -= self.precision_step
         if self.acceptance_radius > self.precision_limit:
             self.acceptance_radius -= self.precision_step
+        if self.calibration_radius > self.precision_limit and self.acceptance_radius < self.calibration_radius:
+            self.calibration_radius -= self.precision_step * 2.5
 
     def setClassicImpact(self,impact):
         self.CN = impact
@@ -136,8 +142,8 @@ class Tracker:
         return np.array([random.random() * self.monitor.width,random.random() * self.monitor.height])
 
     def reset(self):
-        self.acceptance_radius = 200
-        self.calibration_radius = 500
+        self.acceptance_radius = self.ACCEPTANCE_RADIUS
+        self.calibration_radius = self.CALIBRATION_RADIUS
         self.average_points = np.zeros((20,2))
         self.filled_points = 0
         self.clb.unfit()
@@ -149,10 +155,9 @@ class Tracker:
         self.CN = CN
 
     def step(self):
-        self.calibrate_gestures = self.calibrate_gestures and self.calibration_radius > self.eyegestures_calibration_threshold
         key_points, classic_point, blink, fixated = self.getLandmarks(self.calibrate_gestures)
 
-        margin = 30
+        margin = 10
         if classic_point[0] <= margin and self.calibration:
             self.calibrate_gestures = True
         elif classic_point[0] >= self.monitor.width - margin and self.calibration:
@@ -166,7 +171,9 @@ class Tracker:
 
         y_point = self.clb.predict(key_points)
         self.average_points[1:,:] = self.average_points[:(self.average_points.shape[0] - 1),:]
-        self.average_points[0,:] = y_point
+        if fixated <= self.fix:
+            self.average_points[0,:] = y_point
+
         if self.filled_points < self.average_points.shape[0] and (y_point != np.array([0.0,0.0])).any():
             self.filled_points += 1
 
