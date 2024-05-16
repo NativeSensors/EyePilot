@@ -3,7 +3,7 @@ from PySide2.QtWidgets import QApplication, QWidget, QHBoxLayout
 from PySide2.QtCore import Qt, QTimer
 
 from BlurWindow.blurWindow import GlobalBlur
-from button import EyePilotButton
+from components import EyePilotButton
 from dot import CircleWidget
 
 import random

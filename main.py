@@ -1,3 +1,4 @@
+import pyautogui
 import time
 import sys
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QScrollBar
@@ -5,7 +6,7 @@ from PySide2.QtCore import Qt, QTimer
 from PySide2.QtGui import QIcon
 
 from BlurWindow.blurWindow import GlobalBlur
-from button import EyePilotButton, EyePilotButtonColorChoice
+from components import EyePilotButton, EyePilotButtonColorChoice, EyePilotScroll
 from calibration import Calibration
 
 from dot import CircleWidget
@@ -72,6 +73,9 @@ class MyMainWindow(QMainWindow):
         right_frame.setSignal("Customize","ColorChange",signal=self.changeTrackerColor)
         right_frame.setSignal("Main","Calibration",signal=self.show_calibration)
         right_frame.setSignal("Main","Start",signal=self.start)
+        right_frame.setSignal("Settings","Fixation",signal=self.setFixation)
+        right_frame.setSignal("Settings","Impact",signal=self.setImpact)
+        right_frame.setSignal("Settings","Reset Calibration",signal=self.resetTracker)
 
         self.calibrationWidget = Calibration()
         self.calibrationWidget.setOnQuit(self.stop_calibration)
@@ -97,15 +101,33 @@ class MyMainWindow(QMainWindow):
     def changeTrackerColor(self,color):
         self.tracker.setColor(color[0],color[1],color[2])
 
+    def press(self,x,y):
+        pyautogui.moveTo(x+25, y+25)
+        pyautogui.mouseDown()
+        pyautogui.mouseUp()
+
     def main_loop(self):
         if self.running:
-            point, calibration = self.eyeTracker.step()
+            point, calibration, blink, fix = self.eyeTracker.step()
 
             self.tracker.setPosition(point[0], point[1])
 
             if self.calibrationON:
                 self.calibrationWidget.setPosition(point[0], point[1])
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
+
+            if blink and fix:
+                self.press(point[0], point[1])
+
+    def setFixation(self,fix):
+        self.eyeTracker.setFixation(fix/10)
+
+    def setImpact(self,impact):
+        self.eyeTracker.setClassicalImpact(impact)
+
+    def resetTracker(self):
+        self.eyeTracker.reset()
+
 
     def start(self):
         self.eyeTracker.start()
@@ -188,7 +210,6 @@ class Menu(QFrame):
 
     def add_custom(self,button):
         tmp_layout = QHBoxLayout()
-        tmp_layout.setAlignment(Qt.AlignCenter | Qt.AlignHCenter)
         self.right_buttons.append(button)
         tmp_layout.addWidget(self.right_buttons[-1])
         self.right_layout.addLayout(tmp_layout)
@@ -208,48 +229,13 @@ class Settings(Menu):
     def __init__(self):
         super().__init__()
 
-        self.fixation_label = QLabel("Fixation threshold: 0.4")
-        self.fixation_label.setStyleSheet("""
-            QLabel {
-                color: white;
-                font-size: 20px;
-            }
-            """)
-        self.right_layout.addWidget(self.fixation_label)
-
-        self.fixation_scroll_bar = QScrollBar()
-        self.fixation_scroll_bar.setMinimum(1)
-        self.fixation_scroll_bar.setMaximum(10)
-        self.fixation_scroll_bar.setOrientation(Qt.Horizontal)  # Vertical orientation
-        self.fixation_scroll_bar.valueChanged.connect(self.on_fixation_changed)
-
-        self.right_layout.addWidget(self.fixation_scroll_bar)
-
-        self.value_label = QLabel("Impact of classic algorithm: 0")
-        self.value_label.setStyleSheet("""
-            QLabel {
-                color: white;
-                font-size: 20px;
-            }
-            """)
-        self.right_layout.addWidget(self.value_label)
-
-        self.scroll_bar = QScrollBar()
-        self.scroll_bar.setMinimum(1)
-        self.scroll_bar.setMaximum(10)
-        self.scroll_bar.setOrientation(Qt.Horizontal)  # Vertical orientation
-        self.scroll_bar.valueChanged.connect(self.on_value_changed)
-
-        self.right_layout.addWidget(self.scroll_bar)
+        self.add_custom(EyePilotScroll("Fixation Threshold","Fixation",init=6))
+        self.add_custom(EyePilotScroll("Classical Impact","Impact",init=5))
         self.calibrationWidget = Calibration()
 
+        self.add_button("Reset Calibration")
         self.add_button("Back")
 
-    def on_value_changed(self, value):
-        self.value_label.setText(f"Impact of classic algorithm: {value}")
-
-    def on_fixation_changed(self, value):
-        self.fixation_label.setText(f"Fixation threshold: {value/10:.1f}")
 class Customize(Menu):
 
     def __init__(self):
