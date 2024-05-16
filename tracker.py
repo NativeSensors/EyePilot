@@ -68,6 +68,8 @@ class Tracker:
         self.calibrate_gestures = True
         self.fit_point = self.getNewRandomPoint()
 
+        self.output_points = np.zeros((5,2))
+
         self.iterator = 0
 
     def getLandmarks(self,calibrate = False):
@@ -123,13 +125,14 @@ class Tracker:
 
     def step(self):
         key_points, classic_point = self.getLandmarks(self.calibrate_gestures)
-        if classic_point[0] <= 10:
+
+        if classic_point[0] <= 10 and self.calibration:
             self.calibrate_gestures = True
-        elif classic_point[0] >= self.monitor.width - 10:
+        elif classic_point[0] >= self.monitor.width - 10 and self.calibration:
             self.calibrate_gestures = True
-        elif classic_point[1] <= 10:
+        elif classic_point[1] <= 10 and self.calibration:
             self.calibrate_gestures = True
-        elif classic_point[1] >= self.monitor.height - 10:
+        elif classic_point[1] >= self.monitor.height - 10 and self.calibration:
             self.calibrate_gestures = True
         else:
             self.calibrate_gestures = False

@@ -1,6 +1,6 @@
 import time
 import sys
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QToolBar
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QScrollBar
 from PySide2.QtCore import Qt, QTimer
 from PySide2.QtGui import QIcon
 
@@ -208,9 +208,48 @@ class Settings(Menu):
     def __init__(self):
         super().__init__()
 
+        self.fixation_label = QLabel("Fixation threshold: 0.4")
+        self.fixation_label.setStyleSheet("""
+            QLabel {
+                color: white;
+                font-size: 20px;
+            }
+            """)
+        self.right_layout.addWidget(self.fixation_label)
+
+        self.fixation_scroll_bar = QScrollBar()
+        self.fixation_scroll_bar.setMinimum(1)
+        self.fixation_scroll_bar.setMaximum(10)
+        self.fixation_scroll_bar.setOrientation(Qt.Horizontal)  # Vertical orientation
+        self.fixation_scroll_bar.valueChanged.connect(self.on_fixation_changed)
+
+        self.right_layout.addWidget(self.fixation_scroll_bar)
+
+        self.value_label = QLabel("Impact of classic algorithm: 0")
+        self.value_label.setStyleSheet("""
+            QLabel {
+                color: white;
+                font-size: 20px;
+            }
+            """)
+        self.right_layout.addWidget(self.value_label)
+
+        self.scroll_bar = QScrollBar()
+        self.scroll_bar.setMinimum(1)
+        self.scroll_bar.setMaximum(10)
+        self.scroll_bar.setOrientation(Qt.Horizontal)  # Vertical orientation
+        self.scroll_bar.valueChanged.connect(self.on_value_changed)
+
+        self.right_layout.addWidget(self.scroll_bar)
         self.calibrationWidget = Calibration()
 
         self.add_button("Back")
+
+    def on_value_changed(self, value):
+        self.value_label.setText(f"Impact of classic algorithm: {value}")
+
+    def on_fixation_changed(self, value):
+        self.fixation_label.setText(f"Fixation threshold: {value/10:.1f}")
 class Customize(Menu):
 
     def __init__(self):
