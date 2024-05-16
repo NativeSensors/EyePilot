@@ -18,12 +18,12 @@ class MyMainWindow(QMainWindow):
     def moveEvent(self, event) -> None:
         time.sleep(0.02)  # sleep for 20ms
         layout_center  = self.left_layout.geometry().center()
-        self.tracker.setPosition(self.geometry().x() + 175, self.geometry().y() + 200)
+        self.tracker.setPosition(self.geometry().x() + 200, self.geometry().y() + 200)
 
     def resizeEvent(self, event) -> None:
         time.sleep(0.02)  # sleep for 20ms
         layout_center  = self.left_layout.geometry().center()
-        self.tracker.setPosition(self.geometry().x() + 175, self.geometry().y() + 200)
+        self.tracker.setPosition(self.geometry().x() + 200, self.geometry().y() + 200)
 
     def __init__(self):
         super().__init__()
@@ -59,13 +59,13 @@ class MyMainWindow(QMainWindow):
 
         self.landing_spot = CircleWidget()
         layout_center  = self.left_layout.geometry().center()
-        self.landing_spot.setPosition(layout_center.x() + 175, layout_center.y() + 200)
+        self.landing_spot.setPosition(layout_center.x() + 200, layout_center.y() + 200)
         self.landing_spot.setColor(102,102,102)
         self.landing_spot.setParent(self)
 
         self.tracker = CircleWidget()
         layout_center  = self.left_layout.geometry().center()
-        self.tracker.setPosition(self.geometry().x() + layout_center.x() + 175, self.geometry().y() + layout_center.y() + 200)
+        self.tracker.setPosition(self.geometry().x() + layout_center.x() + 200, self.geometry().y() + layout_center.y() + 200)
         self.tracker.setColor(150,150,150)
         self.tracker.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.tracker.show()
@@ -102,19 +102,21 @@ class MyMainWindow(QMainWindow):
         self.tracker.setColor(color[0],color[1],color[2])
 
     def press(self,x,y):
-        pyautogui.moveTo(x+25, y+25)
+        pyautogui.moveTo(x, y)
         pyautogui.mouseDown()
         pyautogui.mouseUp()
 
     def main_loop(self):
         if self.running:
-            point, calibration, blink, fix = self.eyeTracker.step()
+            point, calibration, blink, fix, acceptance_radius, calibration_radius = self.eyeTracker.step()
 
             self.tracker.setPosition(point[0], point[1])
 
             if self.calibrationON:
-                self.calibrationWidget.setPosition(point[0], point[1])
+                self.calibrationWidget.setPosition(calibration[0], calibration[1])
+                self.calibrationWidget.setRadius(2*calibration_radius)
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
+                self.calibrationWidget.setRadiusFit(2*acceptance_radius)
 
             if blink and fix:
                 self.press(point[0], point[1])

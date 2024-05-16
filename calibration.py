@@ -35,7 +35,7 @@ class Calibration(QWidget):
         self.calibration_point.setParent(self)
 
         self.point = CircleWidget()
-        self.point.setColor(120,120,120)
+        self.point.setColor(120,60,0)
         self.point.show()
         self.point.setParent(self)
         # main_layout.addWidget(self.calibration_point)
@@ -54,8 +54,14 @@ class Calibration(QWidget):
     def setPositionFit(self,x,y):
         self.calibration_point.setPosition(x,y)
 
+    def setRadiusFit(self,r):
+        self.calibration_point.setRadius(r)
+
     def setPosition(self,x,y):
         self.point.setPosition(x,y)
+
+    def setRadius(self,r):
+        self.point.setRadius(r)
 
     def quit(self):
         if self.onQuit:

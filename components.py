@@ -120,7 +120,7 @@ class EyePilotButtonColorChoice(EyePilotButtonComponent):
 
         self.model_dot = CircleWidget()
         layout_center  = self.geometry().center()
-        self.model_dot.setPosition(10,25)
+        self.model_dot.setPosition(50,50)
         self.model_dot.setColor(color[0],color[1],color[2])
         self.model_dot.setParent(self)
         self.clicked.connect(self.click)

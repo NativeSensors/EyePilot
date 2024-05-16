@@ -19,6 +19,8 @@ class CircleWidget(QWidget):
         self.to_y = self.x()
         self.to_x = self.y()
 
+        self.diameter = 50
+
         # Start a timer to update the position periodically
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_position)
@@ -28,12 +30,18 @@ class CircleWidget(QWidget):
         # Randomly generate new position within the screen boundaries
         new_x = self.to_x
         new_y = self.to_y
+
+        if self.geometry().width() != self.diameter + 10:
+            self.setGeometry(0, 0, self.diameter + 10, self.diameter + 10)
         self.move(new_x, new_y)
         self.repaint()
 
     def setPosition(self,x,y):
-        self.to_x = x
-        self.to_y = y
+        self.to_x = x - self.diameter/2
+        self.to_y = y - self.diameter/2
+
+    def setRadius(self,diameter):
+        self.diameter = diameter
 
     def setColor(self,r,g,b):
         self.brush_color = QColor(r,g,b, 50)
@@ -52,8 +60,7 @@ class CircleWidget(QWidget):
         painter.setPen(pen)
 
         # Draw a circle
-        diameter = 50
-        painter.drawEllipse((self.width() - diameter) / 2, (self.height() - diameter) / 2, diameter, diameter)
+        painter.drawEllipse((self.width() - self.diameter) / 2, (self.height() - self.diameter) / 2, self.diameter, self.diameter)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

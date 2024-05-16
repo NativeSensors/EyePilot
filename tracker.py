@@ -45,15 +45,7 @@ class Calibrator:
         self.fitted = False
 
 def euclidean_distance(point1, point2):
-    # Calculate the squared differences for each dimension
-    squared_diff = (point2 - point1) ** 2
-
-    # Sum the squared differences along all dimensions
-    sum_squared_diff = np.sum(squared_diff)
-
-    # Take the square root of the sum to get the Euclidean distance
-    distance = np.sqrt(sum_squared_diff)
-    return distance
+    return np.linalg.norm(point1 - point2)
 
 class Tracker:
 
@@ -80,6 +72,13 @@ class Tracker:
 
         self.iterator = 0
         self.fix = 0.8
+
+        self.precision_limit = 50
+        self.precision_step = 15
+        self.acceptance_radius = 200
+        self.calibration_radius = 500
+        # after corssing this thresh we are disabling classical calib
+        self.eyegestures_calibration_threshold = 400
 
     def getLandmarks(self,calibrate = False):
 
@@ -109,6 +108,12 @@ class Tracker:
         else:
             return None, None
 
+    def increase_precision(self):
+        if self.calibration_radius > self.precision_limit:
+            self.calibration_radius -= self.precision_step
+        if self.acceptance_radius > self.precision_limit:
+            self.acceptance_radius -= self.precision_step
+
     def setClassicImpact(self,impact):
         self.CN = impact
 
@@ -131,6 +136,8 @@ class Tracker:
         return np.array([random.random() * self.monitor.width,random.random() * self.monitor.height])
 
     def reset(self):
+        self.acceptance_radius = 200
+        self.calibration_radius = 500
         self.average_points = np.zeros((20,2))
         self.filled_points = 0
         self.clb.unfit()
@@ -142,6 +149,7 @@ class Tracker:
         self.CN = CN
 
     def step(self):
+        self.calibrate_gestures = self.calibrate_gestures and self.calibration_radius > self.eyegestures_calibration_threshold
         key_points, classic_point, blink, fixated = self.getLandmarks(self.calibrate_gestures)
 
         margin = 30
@@ -164,13 +172,14 @@ class Tracker:
 
         averaged_point = (np.sum(self.average_points[:,:],axis=0) + (classic_point * self.CN))/(self.filled_points + self.CN)
 
-        if self.calibration and (euclidean_distance(averaged_point,self.fit_point) < 500 or self.filled_points < self.average_points.shape[0] * 10):
+        if self.calibration and (euclidean_distance(averaged_point,self.fit_point) < self.calibration_radius or self.filled_points < self.average_points.shape[0] * 10):
             self.clb.add(key_points,self.fit_point,classic_point,y_point)
 
-        if euclidean_distance(averaged_point,self.fit_point) < 200:
+        if euclidean_distance(averaged_point,self.fit_point) < self.acceptance_radius:
             self.iterator += 1
             if self.iterator > 10:
                 self.iterator = 0
                 self.fit_point = self.getNewRandomPoint()
+                self.increase_precision()
 
-        return (averaged_point, self.fit_point, blink, fixated >= self.fix)
+        return (averaged_point, self.fit_point, blink, fixated >= self.fix, self.acceptance_radius, self.calibration_radius)
