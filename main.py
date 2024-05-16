@@ -230,7 +230,7 @@ class Settings(Menu):
         super().__init__()
 
         self.add_custom(EyePilotScroll("Fixation Threshold","Fixation",init=6))
-        self.add_custom(EyePilotScroll("Classical Impact","Impact",init=5))
+        self.add_custom(EyePilotScroll("Classical Impact","Impact",init=5,start=0))
         self.calibrationWidget = Calibration()
 
         self.add_button("Reset Calibration")
