@@ -9,6 +9,8 @@ from BlurWindow.blurWindow import GlobalBlur
 from components import EyePilotButton, EyePilotButtonColorChoice, EyePilotScroll
 from calibration import Calibration
 
+from contextTracker import VisContext
+
 from dot import CircleWidget
 
 from tracker import Tracker
@@ -89,6 +91,8 @@ class MyMainWindow(QMainWindow):
         self.running = False
         self.calibrationON = False
 
+        self.vizContext = VisContext()
+
     def show_calibration(self):
         self.calibrationON = True
         self.eyeTracker.calibrationOn()
@@ -117,6 +121,9 @@ class MyMainWindow(QMainWindow):
                 self.calibrationWidget.setRadius(2*calibration_radius)
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
                 self.calibrationWidget.setRadiusFit(2*acceptance_radius)
+
+            # if fix:
+            self.vizContext.setPosition(point[0], point[1])
 
             if blink and fix:
                 self.press(point[0], point[1])
