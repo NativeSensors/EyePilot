@@ -21,7 +21,7 @@ class VisContext:
 class CursorTracker:
 
     def __init__(self):
-        self.update_delay = 0.5 # ms 
+        self.update_delay = 0.5 # ms
         self.last_x = 0
         self.last_y = 0
         self.window_h = 1000
