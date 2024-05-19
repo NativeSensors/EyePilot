@@ -1,6 +1,6 @@
 from IconMatch.IconMatch import ScreenScanner
 from dot import CircleWidget
-from PySide2.QtCore import QTimer
+from PySide2.QtCore import Qt, QTimer
 
 import threading
 import numpy as np
@@ -10,6 +10,7 @@ class VisContext:
 
     def __init__(self):
         self.dot = CircleWidget()
+        self.dot.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.dot.show()
         self.cursorTracker = CursorTracker()
 
@@ -19,7 +20,8 @@ class VisContext:
 
 class CursorTracker:
 
-    def __init__(self,rate=5):
+    def __init__(self):
+        self.update_delay = 0.5 # ms 
         self.last_x = 0
         self.last_y = 0
         self.window_h = 1000
@@ -31,10 +33,11 @@ class CursorTracker:
         self.DSB.loadData(rectangles)
 
         self.start = time.time()
-        self.rate = rate
 
         # Start a timer to update the position periodically
         threading.Timer(0.5,self.__background_loop).start()
+
+        self.closest_rectangle = (0,0)
 
     def __background_loop(self):
         self.rescan(self.last_x-self.window_w/2,self.last_y-self.window_h/2,self.window_w,self.window_h)
@@ -62,10 +65,10 @@ class CursorTracker:
             if distance < closest_distance:
                 closest_distance = distance
                 closest_rectangle = rectangle
-
-        if closest_rectangle:
-            return (closest_rectangle[0],closest_rectangle[1])
-        return 0,0
+        if closest_rectangle and self.update_delay < (time.time() - self.start):
+            self.start = time.time()
+            self.closest_rectangle = (closest_rectangle[0],closest_rectangle[1])
+        return self.closest_rectangle
 
 
 class DynamicSpatialBuckets:
