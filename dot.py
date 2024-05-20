@@ -14,12 +14,14 @@ class CircleWidget(QWidget):
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.setGeometry(0, 0, 60, 60)
 
+        self.diameter = 50
+        self.transparency = 50
+        self.penWidth = 2
+
         self.setColor(35, 67, 154)
 
         self.to_y = self.x()
         self.to_x = self.y()
-
-        self.diameter = 50
 
         # Start a timer to update the position periodically
         self.timer = QTimer(self)
@@ -44,8 +46,19 @@ class CircleWidget(QWidget):
         self.diameter = diameter
 
     def setColor(self,r,g,b):
-        self.brush_color = QColor(r,g,b, 50)
+        self.brush_color = QColor(r,g,b, self.transparency)
         self.pen_color = QColor(r, g, b)  # Red color for the border
+
+    def setTransparency(self,transparency):
+        self.transparency = transparency
+        if self.transparency > 0:
+            self.penWidth = 2
+        elif self.transparency == 0:
+            self.penWidth = 0
+        else:
+            self.penWidth = -1
+
+        self.setColor(self.brush_color.red(),self.brush_color.green(),self.brush_color.blue())
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -55,7 +68,7 @@ class CircleWidget(QWidget):
         brush = QBrush(self.brush_color)
         painter.setBrush(brush)
         # Set the pen color and width
-        pen_width = 2  # Width of the border
+        pen_width = self.penWidth  # Width of the border
         pen = QPen(self.pen_color, pen_width)
         painter.setPen(pen)
 

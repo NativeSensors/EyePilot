@@ -101,7 +101,7 @@ class Tracker:
                 calibrate, # set calibration - switch to False to stop calibration
                 self.monitor.width,
                 self.monitor.height,
-                0, 0, self.fix,10)
+                0, 0, self.fix, 100)
 
             cursor_x, cursor_y = event.point_screen[0],event.point_screen[1]
             l_eye_landmarks = event.l_eye.getLandmarks()
@@ -118,7 +118,7 @@ class Tracker:
         if self.acceptance_radius > self.precision_limit:
             self.acceptance_radius -= self.precision_step
         if self.calibration_radius > self.precision_limit and self.acceptance_radius < self.calibration_radius:
-            self.calibration_radius -= self.precision_step * 2.5
+            self.calibration_radius -= self.precision_step
 
     def setClassicImpact(self,impact):
         self.CN = impact

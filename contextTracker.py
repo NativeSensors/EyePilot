@@ -8,19 +8,36 @@ import time
 
 class VisContext:
 
-    def __init__(self):
+    def __init__(self,before = lambda : None ,after = lambda : None):
+        self.before = before
+        self.after = after
+
         self.dot = CircleWidget()
         self.dot.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.dot.show()
-        self.cursorTracker = CursorTracker()
+        self.cursorTracker = CursorTracker(self.before_scan,self.after_scan)
+
+    def before_scan(self):
+        self.before()
+
+    def after_scan(self):
+        self.after()
 
     def setPosition(self,x,y):
         closest_x, closest_y = self.cursorTracker.getClosestObject(x,y)
         self.dot.setPosition(closest_x, closest_y)
 
+    def start(self):
+        self.dot.show()
+        self.cursorTracker.start()
+
+    def close(self):
+        self.cursorTracker.close()
+        self.dot.close()
+
 class CursorTracker:
 
-    def __init__(self):
+    def __init__(self,before_scan = lambda : None,after_scan = lambda : None):
         self.update_delay = 0.5 # ms
         self.last_x = 0
         self.last_y = 0
@@ -32,20 +49,30 @@ class CursorTracker:
         self.DSB = DynamicSpatialBuckets()
         self.DSB.loadData(rectangles)
 
-        self.start = time.time()
+        self.time_start = time.time()
 
         # Start a timer to update the position periodically
-        threading.Timer(0.5,self.__background_loop).start()
-
         self.closest_rectangle = (0,0)
+
+        self.before_scan = before_scan
+        self.after_scan = after_scan
+
+    def start(self):
+        if self.stop:
+            self.stop = False
+            threading.Timer(0.5,self.__background_loop).start()
+
+    def close(self):
+        self.stop = True
 
     def __background_loop(self):
         self.rescan(self.last_x-self.window_w/2,self.last_y-self.window_h/2,self.window_w,self.window_h)
-        threading.Timer(0.5,self.__background_loop).start()
+        if not self.stop:
+            threading.Timer(0.5,self.__background_loop).start()
 
 
     def rescan(self,x,y,w,h):
-        rectangles = self.scanner.scan(bbox = (x,y,x+w,y+h))
+        rectangles = self.scanner.scan((x,y,x+w,y+h))
         self.DSB = DynamicSpatialBuckets()
         self.DSB.loadData(rectangles)
 
@@ -65,8 +92,8 @@ class CursorTracker:
             if distance < closest_distance:
                 closest_distance = distance
                 closest_rectangle = rectangle
-        if closest_rectangle and self.update_delay < (time.time() - self.start):
-            self.start = time.time()
+        if closest_rectangle and self.update_delay < (time.time() - self.time_start):
+            self.time_start = time.time()
             self.closest_rectangle = (closest_rectangle[0],closest_rectangle[1])
         return self.closest_rectangle
 

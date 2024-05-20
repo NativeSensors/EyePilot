@@ -69,6 +69,7 @@ class MyMainWindow(QMainWindow):
         layout_center  = self.left_layout.geometry().center()
         self.tracker.setPosition(self.geometry().x() + layout_center.x() + 200, self.geometry().y() + layout_center.y() + 200)
         self.tracker.setColor(150,150,150)
+        self.tracker.setTransparency(0)
         self.tracker.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.tracker.show()
 
@@ -111,6 +112,7 @@ class MyMainWindow(QMainWindow):
         pyautogui.mouseUp()
 
     def main_loop(self):
+        time_start = time.time()
         if self.running:
             point, calibration, blink, fix, acceptance_radius, calibration_radius = self.eyeTracker.step()
 
@@ -122,8 +124,11 @@ class MyMainWindow(QMainWindow):
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
                 self.calibrationWidget.setRadiusFit(2*acceptance_radius)
 
-            # if fix:
-            self.vizContext.setPosition(point[0], point[1])
+            if fix:
+                self.vizContext.start()
+                self.vizContext.setPosition(point[0], point[1])
+            else:
+                self.vizContext.close()
 
             if blink and fix:
                 self.press(point[0], point[1])
@@ -144,6 +149,7 @@ class MyMainWindow(QMainWindow):
 
     def stop(self):
         self.running = False
+        self.vizContext.close()
         self.eyeTracker.stop()
         self.tracker.close()
 
