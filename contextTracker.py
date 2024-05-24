@@ -26,6 +26,7 @@ class VisContext:
     def setPosition(self,x,y):
         closest_x, closest_y = self.cursorTracker.getClosestObject(x,y)
         self.dot.setPosition(closest_x, closest_y)
+        return (closest_x, closest_y)
 
     def start(self):
         self.dot.show()

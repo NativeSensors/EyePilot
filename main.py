@@ -131,7 +131,8 @@ class MyMainWindow(QMainWindow):
                 self.vizContext.close()
 
             if blink and fix:
-                self.press(point[0], point[1])
+                x,y = self.vizContext.setPosition(point[0], point[1])
+                self.press(x,y)
 
     def setFixation(self,fix):
         self.eyeTracker.setFixation(fix/10)
@@ -244,7 +245,7 @@ class Settings(Menu):
     def __init__(self):
         super().__init__()
 
-        self.add_custom(EyePilotScroll("Fixation Threshold","Fixation",init=6))
+        self.add_custom(EyePilotScroll("Fixation Threshold","Fixation",init=2))
         self.add_custom(EyePilotScroll("Classical Impact","Impact",init=5,start=0))
         self.calibrationWidget = Calibration()
 
