@@ -1,6 +1,8 @@
 import pyautogui
 import time
 import sys
+import os
+
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QScrollBar
 from PySide2.QtCore import Qt, QTimer
 from PySide2.QtGui import QIcon
@@ -14,6 +16,32 @@ from contextTracker import VisContext
 from dot import CircleWidget
 
 from tracker import Tracker
+
+class ModelSaver:
+
+    def __init__(self):
+        self.model_name = "calibration_model.mdl"
+        self.path = "__tmp"
+
+    def isModel(self):
+        model_path = os.path.join(self.path, self.model_name)
+        return os.path.exists(model_path)
+
+    def getModel(self):
+        if self.isModel():
+            model_path = os.path.join(self.path, self.model_name)
+            with open(model_path, 'rb') as model_file:
+                model_data = model_file.read()
+            return model_data
+        else:
+            return None
+
+    def saveModel(self, model_data):
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
+        model_path = os.path.join(self.path, self.model_name)
+        with open(model_path, 'wb') as model_file:
+            model_file.write(model_data)
 
 class MyMainWindow(QMainWindow):
 
@@ -94,12 +122,17 @@ class MyMainWindow(QMainWindow):
 
         self.vizContext = VisContext()
 
+        self.model = ModelSaver()
+
     def show_calibration(self):
         self.calibrationON = True
         self.eyeTracker.calibrationOn()
         self.calibrationWidget.show()
 
     def stop_calibration(self):
+        modelData = self.eyeTracker.saveModel()
+        self.model.saveModel(modelData)
+
         self.calibrationON = False
         self.eyeTracker.calibrationOff()
 
@@ -145,7 +178,13 @@ class MyMainWindow(QMainWindow):
 
 
     def start(self):
+        modelData = self.model.getModel()
         self.eyeTracker.start()
+
+        if modelData is None:
+            self.show_calibration()
+        else:
+            self.eyeTracker.loadModel(modelData)
         self.running = True
 
     def stop(self):
