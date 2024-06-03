@@ -43,6 +43,12 @@ class ModelSaver:
         with open(model_path, 'wb') as model_file:
             model_file.write(model_data)
 
+    def rmModel(self):
+        model_path = os.path.join(self.path, self.model_name)
+        if os.path.exists(model_path):
+            os.remove(model_path)
+
+
 class MyMainWindow(QMainWindow):
 
     def moveEvent(self, event) -> None:
@@ -174,13 +180,12 @@ class MyMainWindow(QMainWindow):
         self.eyeTracker.setClassicalImpact(impact)
 
     def resetTracker(self):
+        self.model.rmModel()
         self.eyeTracker.reset()
-
 
     def start(self):
         modelData = self.model.getModel()
         self.eyeTracker.start()
-
         if modelData is None:
             self.show_calibration()
         else:

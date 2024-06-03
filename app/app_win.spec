@@ -5,6 +5,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
+        ('icon.png','icon.png'),
         ('../venv/Lib/site-packages/mediapipe/modules', 'mediapipe/modules'),
     ],
     hiddenimports=[],
@@ -34,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='icon.png'
 )
