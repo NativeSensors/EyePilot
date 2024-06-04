@@ -6,6 +6,7 @@ import os
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QScrollBar
 from PySide2.QtCore import Qt, QTimer
 from PySide2.QtGui import QIcon
+import resources_rc  # Import the compiled resource file
 
 from BlurWindow.blurWindow import GlobalBlur
 from components import EyePilotButton, EyePilotButtonColorChoice, EyePilotScroll
@@ -63,7 +64,7 @@ class MyMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowIcon(QIcon("icon.png"))
+        self.setWindowIcon(QIcon(":/icon.png"))
 
         self.setWindowTitle("EyePilot")
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -316,6 +317,8 @@ class Customize(Menu):
         self.add_button("Back")
 
 if __name__ == "__main__":
+    sys.stdout = open(os.devnull, 'w')
+
     app = QApplication(sys.argv)
     window = MyMainWindow()
     window.show()

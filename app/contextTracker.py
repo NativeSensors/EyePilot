@@ -42,8 +42,8 @@ class CursorTracker:
         self.update_delay = 0.5 # ms
         self.last_x = 0
         self.last_y = 0
-        self.window_h = 1000
-        self.window_w = 1000
+        self.window_h = 200
+        self.window_w = 200
         self.scanner = ScreenScanner()
         rectangles = self.scanner.scan(bbox = (0,0,self.window_w,self.window_h))
 
