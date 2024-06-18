@@ -317,7 +317,7 @@ class Customize(Menu):
         self.add_button("Back")
 
 if __name__ == "__main__":
-    sys.stdout = open(os.devnull, 'w')
+    # sys.stdout = open(os.devnull, 'w')
 
     app = QApplication(sys.argv)
     window = MyMainWindow()

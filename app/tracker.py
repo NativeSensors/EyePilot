@@ -62,6 +62,7 @@ class Tracker:
         self.monitor = list(filter(lambda monitor: monitor.is_primary == True ,get_monitors()))[0]
         self.gestures = EyeGestures_v2()
 
+        self.gestures.enableCNCalib()
         self.calibration = False
 
     def start(self):
