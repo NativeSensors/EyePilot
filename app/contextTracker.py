@@ -2,6 +2,7 @@ from IconMatch.IconMatch import ScreenScanner
 from dot import CircleWidget
 from PySide2.QtCore import Qt, QTimer
 
+import cv2 as cv
 import threading
 import numpy as np
 import time
@@ -36,6 +37,52 @@ class VisContext:
         self.cursorTracker.close()
         self.dot.close()
 
+class RichContext:
+
+    def __init__(self,x,y,rectangles,img):
+        self.img = img
+        self.rectangles = rectangles
+        self.ox = x
+        self.oy = y
+
+    def setRichImage(self,px,py):
+        print("setting rich context image")
+        font = cv.FONT_HERSHEY_SIMPLEX
+        step = 255/6
+        iterate = 0
+        added_list = []
+        for i,rectangle in enumerate(self.rectangles):
+            x = int(rectangle[0] - self.ox + rectangle[2]/2)
+            y = int(rectangle[1] - self.oy + rectangle[3]/2)
+
+            distance = np.linalg.norm(np.array([px - self.ox,py - self.oy]) - np.array([x,y]))
+            if distance < 300:
+                if len(added_list) == 0:
+                    added_list.append(np.array([x,y]))
+                    val = int(step*i)
+                    val %= 255
+
+                    cv.putText(self.img, f"{iterate}", (x, y), font, 1, ((255-val), 255, val), 1,  cv.LINE_AA)
+                    cv.imwrite("__tmpRichImg.png",self.img)
+                    if iterate >= 5:
+                        break
+                    iterate+=1
+                else:
+                    not_overlapping = True
+                    for point in added_list:
+                        not_overlapping = not_overlapping and (np.linalg.norm(point - np.array([x,y])) > 50)
+                    if not_overlapping:
+                        val = int(step*i)
+                        val %= 255
+
+                        cv.putText(self.img, f"{iterate}", (x, y), font, 1, ((255-val), 255, val), 1,  cv.LINE_AA)
+                        cv.imwrite("__tmpRichImg.png",self.img)
+                        if iterate >= 5:
+                            break
+                        iterate+=1
+                        added_list.append(np.array([x,y]))
+
+
 class CursorTracker:
 
     def __init__(self,before_scan = lambda : None,after_scan = lambda : None):
@@ -58,6 +105,8 @@ class CursorTracker:
         self.before_scan = before_scan
         self.after_scan = after_scan
 
+        self.rich_context = None
+
     def start(self):
         if self.stop:
             self.stop = False
@@ -71,13 +120,23 @@ class CursorTracker:
         if not self.stop:
             threading.Timer(0.5,self.__background_loop).start()
 
-
     def rescan(self,x,y,w,h):
         rectangles = self.scanner.scan((x,y,x+w,y+h))
+        if len(rectangles) > 0:
+            self.rich_context = RichContext(
+                x=x,
+                y=y,
+                rectangles=rectangles,
+                img=cv.imread("__tmp.png"))
         self.DSB = DynamicSpatialBuckets()
         self.DSB.loadData(rectangles)
 
+    def getRichContext(self):
+        return self.rich_context
+
     def getClosestObject(self,x,y):
+        if self.rich_context:
+            self.rich_context.setRichImage(x,y)
 
         self.last_x = x
         self.last_y = y

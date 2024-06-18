@@ -38,7 +38,7 @@ class Calibration(QWidget):
         self.point.setColor(120,60,0)
         self.point.show()
         self.point.setParent(self)
-o        # main_layout.addWidget(self.calibration_point)
+        # main_layout.addWidget(self.calibration_point)
         # Set the window size to full screen
 
     def setFullScreen(self):
