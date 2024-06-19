@@ -56,7 +56,7 @@ class RichContext:
             y = int(rectangle[1] - self.oy + rectangle[3]/2)
 
             distance = np.linalg.norm(np.array([px - self.ox,py - self.oy]) - np.array([x,y]))
-            if distance < 300:
+            if distance < 100:
                 if len(added_list) == 0:
                     added_list.append(np.array([x,y]))
                     val = int(step*i)
