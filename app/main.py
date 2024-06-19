@@ -131,6 +131,9 @@ class MyMainWindow(QMainWindow):
 
         self.model = ModelSaver()
 
+        self.fix_start = time.time()
+
+
     def show_calibration(self):
         self.calibrationON = True
         self.eyeTracker.calibrationOn()
@@ -152,7 +155,7 @@ class MyMainWindow(QMainWindow):
         pyautogui.mouseUp()
 
     def main_loop(self):
-        time_start = time.time()
+        fix_debounce = 1
         if self.running:
             point, calibration, blink, fix, acceptance_radius, calibration_radius = self.eyeTracker.step()
 
@@ -164,10 +167,11 @@ class MyMainWindow(QMainWindow):
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
                 self.calibrationWidget.setRadiusFit(2*acceptance_radius)
 
-            if fix:
+            if fix and fix_debounce < time.time() - self.fix_start:
+                self.fix_start = time.time()
                 self.vizContext.start()
                 self.vizContext.setPosition(point[0], point[1])
-            else:
+            elif not fix:
                 self.vizContext.close()
 
             if blink and fix:
