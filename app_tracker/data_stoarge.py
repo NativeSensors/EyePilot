@@ -12,6 +12,7 @@ import glob
 import time
 import csv
 import cv2
+import re
 import os
 
 from pathlib import Path
@@ -96,14 +97,31 @@ class Storage:
             plt.imshow(map_image,  extent=[xmin, xmax, ymin, ymax])  # Display the screenshot as the background
             plt.axis('off')
 
-            plt.imshow(density.T, origin='lower', cmap='viridis', extent=[xmin, xmax, ymin, ymax],alpha=0.5)
+            # get colormap
+            ncolors = 256
+            color_array = plt.get_cmap('hot')(range(ncolors))
+
+            # change alpha values
+            color_array[:,-1] = np.linspace(1.0,0.0,ncolors)
+
+            # create a colormap object
+            map_object = LinearSegmentedColormap.from_list(name='hot',colors=color_array)
+
+            plt.imshow(density.T, origin='lower', cmap=map_object, extent=[xmin, xmax, ymin, ymax],alpha=0.5)
             plt.axis('off')
             # Save the combined image with heatmap overlay
-            plt.savefig(f"{self.directory_raw}/heatmap_{number}_{int(prev_timestamp)}.png", bbox_inches='tight')
+            plt.savefig(f"{self.directory_raw}/heatmap_{number}.png", bbox_inches='tight')
             number+=1
 
+        def numerical_sort(value):
+            parts = re.findall(r'\d+', value)
+            return list(map(int, parts))
+
         images = []
-        for filename in glob.glob(f"{self.directory_raw}/heatmap_*.png"):
+        file_list = glob.glob(f"{self.directory_raw}/heatmap_*.png")
+        file_list_sorted = sorted(file_list, key=numerical_sort)
+        for filename in file_list_sorted:
+            print(filename)
             img = cv2.imread(filename)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             images.append(img)
