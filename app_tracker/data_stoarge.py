@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.stats import gaussian_kde
+from sklearn.decomposition import PCA
 import numpy as np
 import pyautogui
 import datetime
@@ -56,11 +57,11 @@ class Storage:
     def make_gifs(self):
 
         prev_timestamp = self.first_timestamp
-        batch_size = 30
+        batch_size = 15
         np_data = np.array(self.data)
         number = 0
         for i in range(0, len(np_data), batch_size):
-            data_batch = np_data[i:i+batch_size]
+            data_batch = np_data[i:i+batch_size*2]
 
             if((data_batch[0][0]) > prev_timestamp + 30):
                 if os.path.isfile(f"{self.directory_raw}/{int(prev_timestamp+30)}.png"):
@@ -69,28 +70,33 @@ class Storage:
             map_image = plt.imread(f"{self.directory_raw}/{int(prev_timestamp)}.png")
             height, width, _ = map_image.shape
 
+
+            x = data_batch[:,1]
+            y = data_batch[:,2]
+            y = [height - y_i for y_i in y]
+
+            # Combine x and y into a single array
+            xy = np.vstack([x, y]).T
+
+            # Perform PCA on the data
+            pca = PCA(n_components=2)
+            xy_transformed = pca.fit_transform(xy)
+            # Create a 2D density plot using gaussian_kde
+            xy = np.vstack([x, y])
+            kde = gaussian_kde(xy, bw_method=0.2)  # Adjust bw_method for different smoothing
+
+            # Define grid for the heatmap
+            xmin, xmax = 0, width
+            ymin, ymax = 0, height
+            xx, yy = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+            positions = np.vstack([xx.ravel(), yy.ravel()])
+            density = np.reshape(kde(positions).T, xx.shape)
+
             plt.figure(figsize=(8, 6))
-            plt.imshow(map_image)  # Display the screenshot as the background
+            plt.imshow(map_image,  extent=[xmin, xmax, ymin, ymax])  # Display the screenshot as the background
             plt.axis('off')
 
-            x_range = [0, width]
-            y_range = [0,height]
-            heatmap, xedges, yedges = np.histogram2d(data_batch[:,1], data_batch[:,2], bins = 30, range=[x_range, y_range])
-            extent = [xedges[0], xedges[-1], yedges[-1], yedges[0]]
-            alpha = 0.5
-
-            # get colormap
-            ncolors = 256
-            color_array = plt.get_cmap('hot')(range(ncolors))
-
-            # change alpha values
-            color_array[:,-1] = np.linspace(1.0,0.0,ncolors)
-
-            # create a colormap object
-            map_object = LinearSegmentedColormap.from_list(name='hot',colors=color_array)
-
-
-            plt.imshow(heatmap.T, extent=extent, origin='lower', alpha=alpha, cmap=map_object)
+            plt.imshow(density.T, origin='lower', cmap='viridis', extent=[xmin, xmax, ymin, ymax],alpha=0.5)
             plt.axis('off')
             # Save the combined image with heatmap overlay
             plt.savefig(f"{self.directory_raw}/heatmap_{number}_{int(prev_timestamp)}.png", bbox_inches='tight')
@@ -99,6 +105,7 @@ class Storage:
         images = []
         for filename in glob.glob(f"{self.directory_raw}/heatmap_*.png"):
             img = cv2.imread(filename)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             images.append(img)
 
         # Adjust delay and loop count as desired
