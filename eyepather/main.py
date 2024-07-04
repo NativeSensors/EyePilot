@@ -1,12 +1,15 @@
-import pyautogui
+
+import warnings
+# Suppress the specific UserWarning
+warnings.filterwarnings("ignore", category=UserWarning, message="SymbolDatabase.GetPrototype() is deprecated. Please use message_factory.GetMessageClass() instead. SymbolDatabase.GetPrototype() will be removed soon.")
+
+import numpy as np
 import time
 import sys
-import os
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QScrollBar
 from PySide2.QtCore import Qt, QTimer
 from PySide2.QtGui import QIcon
-import resources_rc  # Import the compiled resource file
 
 from BlurWindow.blurWindow import GlobalBlur
 from components import EyePilotButton, EyePilotButtonColorChoice, EyePilotScroll
@@ -87,15 +90,16 @@ class MyMainWindow(QMainWindow):
     def main_loop(self):
         fix_debounce = 1
         if self.running:
-            point, calibration, blink, fix, acceptance_radius, calibration_radius = self.eyeTracker.step()
+            point, calibration, _, _ , acceptance_radius, calibration_radius = self.eyeTracker.step()
 
-            if self.calibrationON:
+            if self.calibrationON and  not np.any(calibration == None):
                 self.calibrationWidget.setPosition(calibration[0], calibration[1])
                 self.calibrationWidget.setRadius(2*calibration_radius)
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
                 self.calibrationWidget.setRadiusFit(2*acceptance_radius)
 
-            self.storage.append(point[0],point[1])
+            if not np.any(point == None):
+                self.storage.append(point[0],point[1])
 
     def setFixation(self,fix):
         self.eyeTracker.setFixation(fix/10)
