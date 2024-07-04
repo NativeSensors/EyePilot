@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='EyePather_0_0_3_alpha',
+    name='EyePather_0_0_4_alpha',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

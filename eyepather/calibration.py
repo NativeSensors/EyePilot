@@ -41,7 +41,7 @@ class Calibration(QWidget):
         # main_layout.addWidget(self.calibration_point)
         # Set the window size to full screen
 
-        self.max_points = 10
+        self.max_points = 15
         self.point_counter = 0
         self.prev_x = 0
         self.prev_y = 0
