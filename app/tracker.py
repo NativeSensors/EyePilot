@@ -62,6 +62,11 @@ class Tracker:
         self.monitor = list(filter(lambda monitor: monitor.is_primary == True ,get_monitors()))[0]
         self.gestures = EyeGestures_v2()
 
+        calibMap = np.array([[0,0],[0.25,0.25],[0,0.5],[0.25,0.75],[0,1],
+        [0.5,0],[0.5,0.25],[0.5,0.5],[0.5,0.75],[0.5,1],
+        [1,0],[0.75,0.25],[1,0.5],[0.75,0.75],[1,1]])
+        self.gestures.uploadCalibrationMap(calibMap)
+
         self.gestures.enableCNCalib()
         self.calibration = False
 

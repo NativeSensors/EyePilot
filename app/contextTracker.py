@@ -1,6 +1,7 @@
 from IconMatch.IconMatch import ScreenScanner
 from dot import CircleWidget
 from PySide2.QtCore import Qt, QTimer
+from gemini_node import ModelAdvisor
 
 import cv2 as cv
 import threading
@@ -17,6 +18,10 @@ class VisContext:
         self.dot.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.dot.show()
         self.cursorTracker = CursorTracker(self.before_scan,self.after_scan)
+
+    def getDescription(self):
+        img, description = self.cursorTracker.getRichContext()
+        return description
 
     def before_scan(self):
         self.before()
@@ -41,9 +46,13 @@ class RichContext:
 
     def __init__(self,x,y,rectangles,img):
         self.img = img
+        self.imgPath = "__tmpRichImg.png"
         self.rectangles = rectangles
         self.ox = x
         self.oy = y
+
+    def getPath(self):
+        return self.imgPath
 
     def setRichImage(self,px,py):
         print("setting rich context image")
@@ -63,7 +72,7 @@ class RichContext:
                     val %= 255
 
                     cv.putText(self.img, f"{iterate}", (x, y), font, 1, ((255-val), 255, val), 1,  cv.LINE_AA)
-                    cv.imwrite("__tmpRichImg.png",self.img)
+                    cv.imwrite(self.imgPath,self.img)
                     if iterate >= 5:
                         break
                     iterate+=1
@@ -76,7 +85,7 @@ class RichContext:
                         val %= 255
 
                         cv.putText(self.img, f"{iterate}", (x, y), font, 1, ((255-val), 255, val), 1,  cv.LINE_AA)
-                        cv.imwrite("__tmpRichImg.png",self.img)
+                        cv.imwrite(self.imgPath,self.img)
                         if iterate >= 5:
                             break
                         iterate+=1
@@ -91,6 +100,7 @@ class CursorTracker:
         self.last_y = 0
         self.window_h = 500
         self.window_w = 500
+        self.advisorModel = ModelAdvisor()
         self.scanner = ScreenScanner()
         rectangles = self.scanner.scan(bbox = (0,0,self.window_w,self.window_h))
 
@@ -132,7 +142,8 @@ class CursorTracker:
         self.DSB.loadData(rectangles)
 
     def getRichContext(self):
-        return self.rich_context
+        description = self.advisorModel.respond(self.rich_context.getPath(self))
+        return (self.rich_context, description)
 
     def getClosestObject(self,x,y):
         if self.rich_context:

@@ -171,6 +171,7 @@ class MyMainWindow(QMainWindow):
                 self.fix_start = time.time()
                 self.vizContext.start()
                 self.vizContext.setPosition(point[0], point[1])
+                self.vizContext.getDescription()
             elif not fix:
                 self.vizContext.close()
 

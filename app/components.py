@@ -60,26 +60,37 @@ class EyePilotScrollComponent(EyePilotComponent,QWidget):
 
 
 class EyePilotButton(EyePilotButtonComponent):
-    def __init__(self, text, id = None, signal=None, parent=None):
+    def __init__(self, text, id = None, signal=None, parent=None,
+                fontColor = "white",
+                color = "rgba(255, 255, 255, 0.0)",
+                colorHover1 = "rgba(56, 60, 79, 0.5)",
+                colorHover2 = "rgba(56, 60, 79, 0.3)",
+                width = "200px",
+                height = "45px",
+                max_width = "200px",
+                border_radius = "5px",
+                border = "0px solid #FF000000"):
         super().__init__(text, id, parent)
 
         # Set the style
-        button_style = """
-            QPushButton {
-                color: white;
+        button_style = f"""
+            QPushButton {{
+                color: {fontColor};
                 font-size: 25px;
-                background-color: rgba(255, 255, 255, 0.0);
-                width: 200px;
-                height: 45px;
-                max-width: 200px;
+                background-color: {color};
+                width: {width};
+                height: {height};
+                max-width: {max_width};
                 margin-left: auto;
                 margin-right: auto;
-            }
+                border-radius: {border_radius};
+                border: {border};
+            }}
 
-            QPushButton:hover {
-                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(56, 60, 79, 0.5), stop:1 rgba(56, 60, 79, 0.3));
-                border-radius: 5px;
-            }
+            QPushButton:hover {{
+                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 {colorHover1}, stop:1 {colorHover2});
+                border-radius: {border_radius};
+            }}
         """
 
         self.setStyleSheet(button_style)
