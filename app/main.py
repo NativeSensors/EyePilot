@@ -166,18 +166,18 @@ class MyMainWindow(QMainWindow):
                 self.calibrationWidget.setRadius(2*calibration_radius)
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
                 self.calibrationWidget.setRadiusFit(2*acceptance_radius)
+            else:
+                if fix and fix_debounce < time.time() - self.fix_start:
+                    self.fix_start = time.time()
+                    self.vizContext.start()
+                    self.vizContext.setPosition(point[0], point[1])
+                    self.vizContext.getDescription()
+                elif not fix:
+                    self.vizContext.close()
 
-            if fix and fix_debounce < time.time() - self.fix_start:
-                self.fix_start = time.time()
-                self.vizContext.start()
-                self.vizContext.setPosition(point[0], point[1])
-                self.vizContext.getDescription()
-            elif not fix:
-                self.vizContext.close()
-
-            if blink and fix:
-                x,y = self.vizContext.setPosition(point[0], point[1])
-                self.press(x,y)
+                if blink and fix:
+                    x,y = self.vizContext.setPosition(point[0], point[1])
+                    self.press(x,y)
 
     def setFixation(self,fix):
         self.eyeTracker.setFixation(fix/10)
@@ -296,7 +296,7 @@ class Settings(Menu):
         super().__init__()
 
         self.add_custom(EyePilotScroll("Fixation Threshold","Fixation",init=2))
-        self.add_custom(EyePilotScroll("Classical Impact","Impact",init=5,start=0))
+        self.add_custom(EyePilotScroll("Classical Impact","Impact",init=2,start=0))
         self.calibrationWidget = Calibration()
 
         self.add_button("Reset Calibration")

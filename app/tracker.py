@@ -68,6 +68,7 @@ class Tracker:
         self.gestures.uploadCalibrationMap(calibMap)
 
         self.gestures.enableCNCalib()
+        self.gestures.setClassicImpact(2)
         self.calibration = False
 
     def start(self):

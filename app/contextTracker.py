@@ -1,7 +1,7 @@
 from IconMatch.IconMatch import ScreenScanner
 from dot import CircleWidget
 from PySide2.QtCore import Qt, QTimer
-from gemini_node import ModelAdvisor
+# from gemini_node import ModelAdvisor
 
 import cv2 as cv
 import threading
@@ -100,7 +100,7 @@ class CursorTracker:
         self.last_y = 0
         self.window_h = 500
         self.window_w = 500
-        self.advisorModel = ModelAdvisor()
+        # self.advisorModel = ModelAdvisor()
         self.scanner = ScreenScanner()
         rectangles = self.scanner.scan(bbox = (0,0,self.window_w,self.window_h))
 
@@ -142,7 +142,8 @@ class CursorTracker:
         self.DSB.loadData(rectangles)
 
     def getRichContext(self):
-        description = self.advisorModel.respond(self.rich_context.getPath(self))
+        description = ""
+        # description = self.advisorModel.respond(self.rich_context.getPath(self))
         return (self.rich_context, description)
 
     def getClosestObject(self,x,y):
