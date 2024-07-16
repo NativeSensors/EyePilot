@@ -97,6 +97,9 @@ class EyePilotButton(EyePilotButtonComponent):
         self.signal = signal
         self.clicked.connect(self.click)
 
+    def update_text(self, new_text):
+        self.setText(new_text)
+
     def click(self):
 
         if self.signal:

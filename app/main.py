@@ -15,6 +15,7 @@ from calibration import Calibration
 from contextTracker import VisContext
 
 from dot import CircleWidget
+from contextMenu import ContextMenu
 
 from tracker import Tracker
 
@@ -128,6 +129,7 @@ class MyMainWindow(QMainWindow):
         self.calibrationON = False
 
         self.vizContext = VisContext()
+        self.contextMenu = ContextMenu()
 
         self.model = ModelSaver()
 
@@ -171,11 +173,15 @@ class MyMainWindow(QMainWindow):
                     self.fix_start = time.time()
                     self.vizContext.start()
                     self.vizContext.setPosition(point[0], point[1])
-                    self.vizContext.getDescription()
+                    description = self.vizContext.getDescription()
+                    print(description)
+                    self.contextMenu.show()
+                    self.contextMenu.setText(description[0],description[1],description[2],"Exit")
                 elif not fix:
                     self.vizContext.close()
 
                 if blink and fix:
+                    self.contextMenu.hide()
                     x,y = self.vizContext.setPosition(point[0], point[1])
                     self.press(x,y)
 

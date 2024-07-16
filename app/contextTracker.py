@@ -7,6 +7,7 @@ import cv2 as cv
 import threading
 import numpy as np
 import time
+import re
 
 class VisContext:
 
@@ -21,7 +22,9 @@ class VisContext:
 
     def getDescription(self):
         img, description = self.cursorTracker.getRichContext()
-        return description
+        pattern = r'(?<=\d\. )(.*?)(?=\n)'
+        tokens = re.findall(pattern, description)
+        return tokens
 
     def before_scan(self):
         self.before()
@@ -142,7 +145,7 @@ class CursorTracker:
         self.DSB.loadData(rectangles)
 
     def getRichContext(self):
-        description = ""
+        description = "output: 0. Open .git\n1. Open Documents\n2. Open Downloads\n3. Open dist\n4. Open build\n5. Open Downloads" # test input
         # description = self.advisorModel.respond(self.rich_context.getPath(self))
         return (self.rich_context, description)
 
