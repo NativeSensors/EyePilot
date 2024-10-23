@@ -1,5 +1,9 @@
 <RCC>
     <qresource prefix="/">
         <file>icon.png</file>
+        <file>assets/mouse-duotone.svg</file>
+        <file>assets/mouse-right-click-duotone.svg</file>
+        <file>assets/x-circle.svg</file>
+        <file>assets/ellipsis-horizontal-circle-20-solid.svg</file>
     </qresource>
 </RCC>

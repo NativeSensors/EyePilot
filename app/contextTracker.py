@@ -118,6 +118,7 @@ class CursorTracker:
         self.before_scan = before_scan
         self.after_scan = after_scan
 
+        self.stop = True
         self.rich_context = None
 
     def start(self):

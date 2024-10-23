@@ -1,8 +1,9 @@
 import sys
-from PySide2.QtWidgets import QApplication, QWidget, QVBoxLayout
-from PySide2.QtGui import QPainter, QColor, QBrush, QPen, QIcon
+from PySide2.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
+from PySide2.QtGui import QPainter, QColor, QBrush, QPen, QIcon, QPixmap
 from PySide2.QtCore import Qt, QTimer
 from  components import EyePilotButton
+from PySide2.QtSvg import QSvgWidget
 
 import time
 import random
@@ -17,16 +18,16 @@ class ContextMenuBtn(QWidget):
 
         self.layout = QVBoxLayout()
         self.layout.setAlignment(Qt.AlignCenter | Qt.AlignHCenter)
-        self.btn = EyePilotButton(text,
+        self.btn = EyePilotButton("",
                                 fontColor = "rgba(200, 200, 200)",
-                                color="rgba(41, 44, 51)",
-                                colorHover1 = "rgba(41, 44, 51)",
-                                colorHover2 = "rgba(41, 44, 51)",
-                                width="700px",
+                                color="rgba(150, 150, 150)",
+                                colorHover1 = "rgba(rgba(150, 150, 150)",
+                                colorHover2 = "rgba(rgba(150, 150, 150)",
+                                width="150px",
                                 max_width="900px",
-                                height="90px",
+                                height="150px",
                                 border="1px solid rgba(100, 100, 100)",
-                                border_radius="25px")
+                                border_radius="50%")
         self.layout.addWidget(self.btn)
         self.setLayout(self.layout)
 
@@ -40,6 +41,9 @@ class ContextMenuBtn(QWidget):
 
         self.to_y = y
         self.to_x = x
+
+    def setImage(self,path):
+        self.btn.setImage(path)
 
     def setPosition(self,x,y):
         self.to_x = x - self.diameter/2
@@ -61,11 +65,17 @@ class ContextMenuBtn(QWidget):
 
 class ContextMenu(QWidget):
 
-    def __init__(self) -> None:
-        self.btn1 = ContextMenuBtn("Lorem ipsum morem solem",100,100)
-        self.btn2 = ContextMenuBtn("Lorem ipsum morem solem",150,300)
-        self.btn3 = ContextMenuBtn("Lorem ipsum morem solem",200,500)
-        self.btn4 = ContextMenuBtn("Lorem ipsum morem solem",300,700)
+    def __init__(self,screen_center) -> None:
+        x = screen_center[0]
+        y = screen_center[1]
+        self.btn1 = ContextMenuBtn("Button 1",x-300,y+300)
+        self.btn2 = ContextMenuBtn("Button 2",x-300,y-300)
+        self.btn3 = ContextMenuBtn("Button 3",x+300,y+300)
+        self.btn4 = ContextMenuBtn("Button 4",x+300,y-300)
+        # self.btn2.setImage(":/assets/mouse-duotone.svg")
+        # self.btn4.setImage(":/assets/mouse-right-click-duotone.svg")
+        # self.btn3.setImage(":/assets/x-circle.svg")
+        # self.btn1.setImage(":/assets/ellipsis-horizontal-circle-20-solid.svg")
 
     def show(self):
         self.btn1.show()
@@ -88,13 +98,8 @@ class ContextMenu(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    menu = ContextMenu()
+    menu = ContextMenu([1250,600])
 
     menu.show()
-    menu.setText("Text1","Text2","Text3","Text4")
-    # for n in range(10):
-    # menu.hide()
-    menu.show()
-    menu.setText("Text1","Text2","Text3","LOL4")
 
     sys.exit(app.exec_())

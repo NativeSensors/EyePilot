@@ -129,7 +129,7 @@ class MyMainWindow(QMainWindow):
         self.calibrationON = False
 
         self.vizContext = VisContext()
-        self.contextMenu = ContextMenu()
+        # self.contextMenu = ContextMenu()
 
         self.model = ModelSaver()
 
@@ -168,22 +168,18 @@ class MyMainWindow(QMainWindow):
                 self.calibrationWidget.setRadius(2*calibration_radius)
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
                 self.calibrationWidget.setRadiusFit(2*acceptance_radius)
-            else:
-                if fix and fix_debounce < time.time() - self.fix_start:
-                    self.fix_start = time.time()
-                    self.vizContext.start()
-                    self.vizContext.setPosition(point[0], point[1])
-                    description = self.vizContext.getDescription()
-                    print(description)
-                    self.contextMenu.show()
-                    self.contextMenu.setText(description[0],description[1],description[2],"Exit")
-                elif not fix:
-                    self.vizContext.close()
+            # else:
+                # if fix and fix_debounce < time.time() - self.fix_start:
+                #     self.fix_start = time.time()
+                    # self.vizContext.start()
+                    # self.vizContext.setPosition(point[0], point[1])
+                # elif not fix:
+                    # self.vizContext.close()
 
                 if blink and fix:
-                    self.contextMenu.hide()
-                    x,y = self.vizContext.setPosition(point[0], point[1])
-                    self.press(x,y)
+                    # self.contextMenu.hide()
+                    # self.press(x,y)
+                    pass
 
     def setFixation(self,fix):
         self.eyeTracker.setFixation(fix/10)
