@@ -1,5 +1,5 @@
 from PySide2.QtWidgets import QApplication, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy, QScrollBar, QLabel
-from PySide2.QtGui import QPainter, QIcon
+from PySide2.QtGui import QPainter, QIcon, QPixmap
 from PySide2.QtSvg import QSvgRenderer
 from PySide2.QtCore import Qt, QSize
 
@@ -73,6 +73,15 @@ class EyePilotButton(EyePilotButtonComponent):
                 border = "0px solid #FF000000"):
         super().__init__(text, id, parent)
 
+        self.fontColor = fontColor
+        self.color = color
+        self.colorHover1 = colorHover1
+        self.colorHover2 = colorHover2
+        self.width = width
+        self.height = height
+        self.max_width = max_width
+        self.border_radius = border_radius
+        self.border = border
         # Set the style
         button_style = f"""
             QPushButton {{
@@ -110,6 +119,31 @@ class EyePilotButton(EyePilotButtonComponent):
         icon = QIcon(pixmap)
         self.setIcon(icon)
         self.setIconSize(QSize(100, 100))
+
+    def updateColor(self,color):
+                # Set the style
+        self.color = color
+        button_style = f"""
+            QPushButton {{
+                color: {self.fontColor};
+                font-size: 25px;
+                background-color: {self.color};
+                width: {self.width};
+                height: {self.height};
+                max-width: {self.max_width};
+                margin-left: auto;
+                margin-right: auto;
+                border-radius: {self.border_radius};
+                border: {self.border};
+            }}
+
+            QPushButton:hover {{
+                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 {self.colorHover1}, stop:1 {self.colorHover2});
+                border-radius: {self.border_radius};
+            }}
+        """
+
+        self.setStyleSheet(button_style)
 
     def update_text(self, new_text):
         self.setText(new_text)

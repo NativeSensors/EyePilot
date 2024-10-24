@@ -29,6 +29,7 @@ class Tracker:
         xx, yy = np.meshgrid(x, y)
 
         calibration_map = np.column_stack([xx.ravel(), yy.ravel()])
+        np.random.shuffle(calibration_map)
         self.gestures.uploadCalibrationMap(calibration_map,context="main")
 
         self.gestures.enableCNCalib()

@@ -9,7 +9,7 @@ import time
 import random
 import resources_rc  # Import the compiled resource file
 class ContextMenuBtn(QWidget):
-    def __init__(self,text,x,y,signal= lambda x : x):
+    def __init__(self,text,x,y,radius=300,signal= lambda x : x):
         super().__init__()
         self.setWindowIcon(QIcon(":/icon.png"))
 
@@ -21,8 +21,8 @@ class ContextMenuBtn(QWidget):
         self.btn = EyePilotButton("",
                                 fontColor = "rgba(200, 200, 200)",
                                 color="rgba(150, 150, 150)",
-                                colorHover1 = "rgba(rgba(150, 150, 150)",
-                                colorHover2 = "rgba(rgba(150, 150, 150)",
+                                colorHover1 = "rgba(150, 150, 150)",
+                                colorHover2 = "rgba(150, 150, 150)",
                                 width="150px",
                                 max_width="900px",
                                 height="150px",
@@ -35,8 +35,11 @@ class ContextMenuBtn(QWidget):
         # self.setWindowFlags(Qt.FramelessWindowHint)
         # self.setAttribute(Qt.WA_TranslucentBackground)
         # self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.x = x
+        self.y = y
         self.width = 200
         self.height = 100
+        self.radius = radius
 
         self.setGeometry(x, y, self.width, self.height)
 
@@ -53,6 +56,9 @@ class ContextMenuBtn(QWidget):
     def setText(self,text):
         self.btn.setText(text)
 
+    def setImage(self,path):
+        self.btn.setImage(path)
+
     def setTransparency(self,transparency):
         self.transparency = transparency
         if self.transparency > 0:
@@ -63,6 +69,9 @@ class ContextMenuBtn(QWidget):
             self.penWidth = -1
 
         self.setColor(self.brush_color.red(),self.brush_color.green(),self.brush_color.blue())
+
+    def changeColor(self,color):
+        self.btn.updateColor(color)
 
 class ContextMenu(QWidget):
 
@@ -78,6 +87,31 @@ class ContextMenu(QWidget):
         self.btn2 = ContextMenuBtn("Button 2",x-300,y-300, signal = signal_2)
         self.btn3 = ContextMenuBtn("Button 3",x+300,y+300, signal = signal_3)
         self.btn4 = ContextMenuBtn("Button 4",x+300,y-300, signal = signal_4)
+
+        self.btn2.setImage(":/assets/mouse-duotone.svg")
+        self.btn4.setImage(":/assets/mouse-right-click-duotone.svg")
+        self.btn1.setImage(":/assets/x-circle.svg")
+        self.btn3.setImage(":/assets/ellipsis-horizontal-circle-20-solid.svg")
+        self.activated = False
+
+    def execute(self, cursor):
+        x = cursor[0]
+        y = cursor[1]
+
+        for btn in [self.btn1, self.btn2, self.btn3, self.btn4]:
+            if (x - btn.x)**2 + (y - btn.y)**2  < (btn.radius)**2:
+                btn.changeColor("rgba(160,100,0)")
+                print("changing color")
+            else:
+                btn.changeColor("rgba(150,150,150)")
+
+    def launch(self):
+        self.activated = True
+        self.show()
+
+    def close(self):
+        self.activated = False
+        self.hide()
 
     def show(self):
         self.btn1.show()

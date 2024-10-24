@@ -11,6 +11,7 @@ import resources_rc  # Import the compiled resource file
 from BlurWindow.blurWindow import GlobalBlur
 from components import EyePilotButton, EyePilotButtonColorChoice, EyePilotScroll
 from calibration import Calibration
+from contextMenu import ContextMenu
 
 from contextTracker import VisContext
 
@@ -135,6 +136,7 @@ class MyMainWindow(QMainWindow):
 
         self.fix_start = time.time()
 
+        self.contextMenu = ContextMenu(screen_center = [1250,650])
 
     def show_calibration(self):
         self.calibrationON = True
@@ -168,12 +170,15 @@ class MyMainWindow(QMainWindow):
                 self.calibrationWidget.setRadius(2*calibration_radius)
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
                 self.calibrationWidget.setRadiusFit(2*acceptance_radius)
-            # else:
-                # if fix and fix_debounce < time.time() - self.fix_start:
-                #     self.fix_start = time.time()
+            else:
+                if fix > 0.8 and fix_debounce < time.time() - self.fix_start:
+                    self.fix_start = time.time()
+                    self.contextMenu.launch()
                     # self.vizContext.start()
                     # self.vizContext.setPosition(point[0], point[1])
-                # elif not fix:
+                elif not fix:
+                    self.contextMenu.execute([point[0], point[1]])
+                    # self.contextMenu.close()
                     # self.vizContext.close()
 
                 if blink and fix:
