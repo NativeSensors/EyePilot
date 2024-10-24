@@ -9,7 +9,7 @@ import time
 import random
 import resources_rc  # Import the compiled resource file
 class ContextMenuBtn(QWidget):
-    def __init__(self,text,x,y):
+    def __init__(self,text,x,y,signal= lambda x : x):
         super().__init__()
         self.setWindowIcon(QIcon(":/icon.png"))
 
@@ -27,7 +27,8 @@ class ContextMenuBtn(QWidget):
                                 max_width="900px",
                                 height="150px",
                                 border="1px solid rgba(100, 100, 100)",
-                                border_radius="50%")
+                                border_radius="50%",
+                                signal=signal)
         self.layout.addWidget(self.btn)
         self.setLayout(self.layout)
 
@@ -65,17 +66,18 @@ class ContextMenuBtn(QWidget):
 
 class ContextMenu(QWidget):
 
-    def __init__(self,screen_center) -> None:
+    def __init__(self,
+                screen_center,
+                signal_1 = lambda x : x,
+                signal_2 = lambda x : x,
+                signal_3 = lambda x : x,
+                signal_4 = lambda x : x) -> None:
         x = screen_center[0]
         y = screen_center[1]
-        self.btn1 = ContextMenuBtn("Button 1",x-300,y+300)
-        self.btn2 = ContextMenuBtn("Button 2",x-300,y-300)
-        self.btn3 = ContextMenuBtn("Button 3",x+300,y+300)
-        self.btn4 = ContextMenuBtn("Button 4",x+300,y-300)
-        # self.btn2.setImage(":/assets/mouse-duotone.svg")
-        # self.btn4.setImage(":/assets/mouse-right-click-duotone.svg")
-        # self.btn3.setImage(":/assets/x-circle.svg")
-        # self.btn1.setImage(":/assets/ellipsis-horizontal-circle-20-solid.svg")
+        self.btn1 = ContextMenuBtn("Button 1",x-300,y+300, signal = signal_1)
+        self.btn2 = ContextMenuBtn("Button 2",x-300,y-300, signal = signal_2)
+        self.btn3 = ContextMenuBtn("Button 3",x+300,y+300, signal = signal_3)
+        self.btn4 = ContextMenuBtn("Button 4",x+300,y-300, signal = signal_4)
 
     def show(self):
         self.btn1.show()

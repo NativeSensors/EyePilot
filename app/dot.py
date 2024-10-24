@@ -15,11 +15,11 @@ class CircleWidget(QWidget):
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.setGeometry(0, 0, 60, 60)
 
-        self.diameter = 50
+        self.diameter = 100
         self.transparency = 50
         self.penWidth = 2
 
-        self.setColor(35, 67, 154)
+        self.setColor(100, 0, 255)
 
         self.to_y = self.x()
         self.to_x = self.y()

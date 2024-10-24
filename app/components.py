@@ -1,5 +1,5 @@
 from PySide2.QtWidgets import QApplication, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy, QScrollBar, QLabel
-from PySide2.QtGui import QPainter
+from PySide2.QtGui import QPainter, QIcon
 from PySide2.QtSvg import QSvgRenderer
 from PySide2.QtCore import Qt, QSize
 
@@ -98,18 +98,18 @@ class EyePilotButton(EyePilotButtonComponent):
         self.signal = signal
         self.clicked.connect(self.click)
 
-    # def setImage(self,image_path):
-    #     svg_renderer = QSvgRenderer(image_path)
-    #     pixmap = QPixmap(100, 100)  # Set size of the icon
-    #     pixmap.fill(Qt.transparent) # Ensure transparency
-    #     painter = QPainter(pixmap)
-    #     svg_renderer.render(painter)
-    #     painter.end()
+    def setImage(self,image_path):
+        svg_renderer = QSvgRenderer(image_path)
+        pixmap = QPixmap(100, 100)  # Set size of the icon
+        pixmap.fill(Qt.transparent) # Ensure transparency
+        painter = QPainter(pixmap)
+        svg_renderer.render(painter)
+        painter.end()
 
-    #     # Set the SVG as an icon
-    #     icon = QIcon(pixmap)
-    #     self.setIcon(icon)
-    #     self.setIconSize(QSize(100, 100))
+        # Set the SVG as an icon
+        icon = QIcon(pixmap)
+        self.setIcon(icon)
+        self.setIconSize(QSize(100, 100))
 
     def update_text(self, new_text):
         self.setText(new_text)

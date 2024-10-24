@@ -15,9 +15,9 @@ class VisContext:
         self.before = before
         self.after = after
 
-        self.dot = CircleWidget()
-        self.dot.setWindowFlag(Qt.WindowStaysOnTopHint)
-        self.dot.show()
+        # self.dot = CircleWidget()
+        # self.dot.setWindowFlag(Qt.WindowStaysOnTopHint)
+        # self.dot.show()
         self.cursorTracker = CursorTracker(self.before_scan,self.after_scan)
 
     def getDescription(self):
@@ -34,16 +34,16 @@ class VisContext:
 
     def setPosition(self,x,y):
         closest_x, closest_y = self.cursorTracker.getClosestObject(x,y)
-        self.dot.setPosition(closest_x, closest_y)
+        # self.dot.setPosition(closest_x, closest_y)
         return (closest_x, closest_y)
 
     def start(self):
-        self.dot.show()
+        # self.dot.show()
         self.cursorTracker.start()
 
     def close(self):
         self.cursorTracker.close()
-        self.dot.close()
+        # self.dot.close()
 
 class RichContext:
 

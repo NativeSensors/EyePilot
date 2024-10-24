@@ -104,8 +104,8 @@ class MyMainWindow(QMainWindow):
         self.tracker = CircleWidget()
         layout_center  = self.left_layout.geometry().center()
         self.tracker.setPosition(self.geometry().x() + layout_center.x() + 200, self.geometry().y() + layout_center.y() + 200)
-        self.tracker.setColor(150,150,150)
-        self.tracker.setTransparency(0)
+        self.tracker.setColor(100, 0, 255)
+        # self.tracker.setTransparency(0)
         self.tracker.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.tracker.show()
 
