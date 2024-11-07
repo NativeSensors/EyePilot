@@ -3,15 +3,14 @@ import time
 import sys
 import os
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QScrollBar
+from PySide2.QtWidgets import QDesktopWidget, QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QScrollBar
 from PySide2.QtCore import Qt, QTimer
 from PySide2.QtGui import QIcon
-import resources_rc  # Import the compiled resource file
 
 from BlurWindow.blurWindow import GlobalBlur
-from components import EyePilotButton, EyePilotButtonColorChoice, EyePilotScroll
+from components import EyePilotButton, EyePilotSwitch, EyePilotButtonColorChoice, EyePilotScroll
 from calibration import Calibration
-from contextMenu import ContextMenu
+from blur import Blur
 
 from contextTracker import VisContext
 
@@ -24,9 +23,20 @@ import pyautogui
 import win32gui
 import win32api
 import win32con
-import ctypes
+
+def is_window_transparent(hwnd):
+    # Get the extended window styles
+    ex_style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+
+    # Check for WS_EX_LAYERED and WS_EX_TRANSPARENT
+    # is_layered = ex_style & win32con.WS_EX_LAYERED
+    is_transparent = ex_style & win32con.WS_EX_TRANSPARENT
+
+    return is_transparent != 0
 
 from tracker import Tracker
+
+import ctypes
 
 class ModelSaver:
 
@@ -59,15 +69,6 @@ class ModelSaver:
         if os.path.exists(model_path):
             os.remove(model_path)
 
-def is_window_transparent(hwnd):
-    # Get the extended window styles
-    ex_style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
-
-    # Check for WS_EX_LAYERED and WS_EX_TRANSPARENT
-    # is_layered = ex_style & win32con.WS_EX_LAYERED
-    is_transparent = ex_style & win32con.WS_EX_TRANSPARENT
-
-    return is_transparent != 0
 
 class MyMainWindow(QMainWindow):
 
@@ -83,16 +84,22 @@ class MyMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowIcon(QIcon(":/icon.png"))
+        # Determine the base path for the embedded files
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS  # Path to the folder where PyInstaller unpacks the files
+        else:
+            base_path = os.path.dirname(__file__)  # Path to the current directory
 
-        self.setWindowTitle("EyePilot")
+        # Construct the full path to the embedded image
+        image_path = os.path.join(base_path, 'icon.png')
+        self.setWindowIcon(QIcon(image_path))
+
+        self.windowName = "EyeGesturesLab"
+        self.setWindowTitle(self.windowName)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setGeometry(100, 100, 800, 800)
+        self.setGeometry(100, 100, 800, 600)
 
         GlobalBlur(self.winId(),Dark=True,QWidget=self)
-
-        self.windowName = "EyePilot"
-        self.setWindowTitle(self.windowName)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -105,37 +112,33 @@ class MyMainWindow(QMainWindow):
         main_layout.addWidget(left_frame, stretch=1)
 
         # Add a label to left frame (optional)
-        label_left = QLabel("EyePilot")
-        label_left.setStyleSheet("color: white; font-size: 40px;")
-        label_left.setAlignment(Qt.AlignCenter)
+        self.label_left = QLabel("EyeGestures\nLAB")
+        self.label_left.setStyleSheet("color: white; font-size: 40px;")
+        self.label_left.setAlignment(Qt.AlignCenter)
         self.left_layout = QVBoxLayout()
         left_frame.setLayout(self.left_layout)
-        self.left_layout.addWidget(label_left)
+        self.left_layout.addWidget(self.label_left)
 
         # Create a frame to hold right side content
         right_frame = RightSideMenu()
         main_layout.addWidget(right_frame, stretch=1)
 
-        self.landing_spot = CircleWidget()
-        layout_center  = self.left_layout.geometry().center()
-        self.landing_spot.setPosition(layout_center.x() + 200, layout_center.y() + 200)
-        self.landing_spot.setColor(102,102,102)
-        self.landing_spot.setParent(self)
-
         self.tracker = CircleWidget("EyeGesturesCursor")
         layout_center  = self.left_layout.geometry().center()
         self.tracker.setPosition(self.geometry().x() + layout_center.x() + 200, self.geometry().y() + layout_center.y() + 200)
-        self.tracker.setColor(100, 0, 255)
-        # self.tracker.setTransparency(0)
+        self.tracker.setColor(150,0,100)
+        self.tracker.setTransparency(0.5)
         self.tracker.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.tracker.show()
 
-        right_frame.setSignal("Customize","ColorChange",signal=self.changeTrackerColor)
-        right_frame.setSignal("Main","Calibration",signal=self.show_calibration)
+        # right_frame.setSignal("Customize","ColorChange",signal=self.changeTrackerColor)
+        # right_frame.setSignal("Main","Calibration",signal=self.show_calibration)
         right_frame.setSignal("Main","Start",signal=self.start)
-        right_frame.setSignal("Settings","Fixation",signal=self.setFixation)
-        right_frame.setSignal("Settings","Impact",signal=self.setImpact)
-        right_frame.setSignal("Settings","Reset Calibration",signal=self.resetTracker)
+        right_frame.setSignal("Advanced","Enable focus",signal=self.switchFocus)
+        right_frame.setSignal("Advanced","Enable Screen Lock",signal=self.switchScreenLock)
+        right_frame.setSignal("Advanced","ScreenLockSeconds",signal=self.setScreenLockDuration)
+        right_frame.setSignal("Advanced","Seconds",signal=self.setDuration)
+        right_frame.setSignal("Advanced","Sensitivity",signal=self.setSensitivity)
 
         self.calibrationWidget = Calibration()
         self.calibrationWidget.setOnQuit(self.stop_calibration)
@@ -149,26 +152,51 @@ class MyMainWindow(QMainWindow):
         self.running = False
         self.calibrationON = False
 
-        self.vizContext = VisContext()
+        # self.vizContext = VisContext()
         # self.contextMenu = ContextMenu()
 
         self.model = ModelSaver()
 
         self.fix_start = time.time()
 
-        self.contextMenu = ContextMenu(screen_center = [1250,650])
+        desktop = QDesktopWidget()
+        self.screen_geometry = desktop.screenGeometry(desktop.primaryScreen())
 
+        self.calibration_points = 0
+        self.prev_point = None
+        self.blur_widget = Blur()
+        self.blur_widget.setOnQuit(self.stop)
+
+        self.time_start = time.time()
+        self.duration_to_blur = 0
+
+        self.focus = False
+        self.screenLock = False
+        self.screenLockCounter = time.time()
+        self.screenLockTimeLimit = 15
+        self.sensitivity = 1
+
+        self.demo_start = time.time()
+        self.demo_duration_max = 2 * 60
         self.fix_debounce = 51
+
         self.prev_cursor = pyautogui.position()
 
+
+    def updateMainLabel(self,title):
+        self.label_left.setText(f"{title}")
+
     def show_calibration(self):
+        self.calibration_points = 0
+        self.prev_point = None
         self.calibrationON = True
         self.eyeTracker.calibrationOn()
         self.calibrationWidget.show()
+        self.tracker.show()
 
     def stop_calibration(self):
         modelData = self.eyeTracker.saveModel()
-        self.model.saveModel(modelData)
+        # self.model.saveModel(modelData)
 
         self.calibrationON = False
         self.eyeTracker.calibrationOff()
@@ -180,8 +208,6 @@ class MyMainWindow(QMainWindow):
         pyautogui.moveTo(x, y)
         pyautogui.mouseDown()
         pyautogui.mouseUp()
-
-    ########################### Window switcher
 
     def get_circle_widget_handle(self):
         def enum_handler(hwnd, handles):
@@ -227,71 +253,95 @@ class MyMainWindow(QMainWindow):
                     return True
         return False
 
-    ##########################
-
     def main_loop(self):
-        window_switch_on = False
-        if self.running:
+        # if (time.time() - self.demo_start) > self.demo_duration_max:
+        #     self.stop(None)
+        #     self.close()
+        #     return
+
+        # time_left = self.demo_duration_max - (time.time() - self.demo_start)
+        # self.updateMainLabel(f"EyeFocus\nDemo time left\n{int(time_left/60)}:{int(time_left%60)}")
+        new_cursor = pyautogui.position()
+        if self.prev_cursor.x != new_cursor.x or self.prev_cursor.y != new_cursor.y:
+            self.prev_cursor = new_cursor
+            self.fix_debounce = 0
+            time.sleep(0.1)
+        elif self.running:
             point, calibration, blink, fix, acceptance_radius, calibration_radius = self.eyeTracker.step()
 
             self.tracker.setPosition(point[0], point[1])
+
+            if self.prev_point == None:
+                self.prev_point = (calibration[0], calibration[1])
+                self.calibration_points += 1
 
             if self.calibrationON:
                 self.calibrationWidget.setPosition(calibration[0], calibration[1])
                 self.calibrationWidget.setRadius(2*calibration_radius)
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
                 self.calibrationWidget.setRadiusFit(2*acceptance_radius)
+
+                if self.prev_point[0] != calibration[0] and self.prev_point[1] != calibration[1]:
+                    self.prev_point = (calibration[0], calibration[1])
+                    self.calibration_points += 1
+
+                if self.calibration_points >= 10:
+                    self.calibrationWidget.quit()
+                    # self.tracker.close()
             else:
-                if fix > 0.8 and 1 < time.time() - self.fix_start:
-                    self.fix_start = time.time()
-                    self.contextMenu.launch([point[0], point[1]])
-                    # self.vizContext.start()
-                    # self.vizContext.setPosition(point[0], point[1])
-                elif not fix:
-                    self.contextMenu.execute([point[0], point[1]])
-                    if 1 < time.time() - self.fix_start:
-                        self.contextMenu.click([point[0], point[1]])
+                if self.fix_debounce > 100:
+                    self.check_window(point)
+                    self.fix_debounce = 0
+                else:
+                    self.fix_debounce += 1
 
-                if window_switch_on:
-                    if self.fix_debounce > 10:
-                        self.check_window(point)
-                        self.fix_debounce = 0
-                    else:
-                        self.fix_debounce += 1
+    def switchFocus(self,button):
+        self.focus = not self.focus
+        if self.focus:
+            button.update_text("Disable focus")
+        else:
+            button.update_text("Enable focus")
 
-                if blink and fix:
-                    # self.contextMenu.hide()
-                    # self.press(x,y)
-                    pass
+    def switchScreenLock(self,button):
+        self.screenLock = not self.screenLock
+        if self.screenLock:
+            button.update_text("Disable Screen Lock")
+        else:
+            button.update_text("Enable Screen Lock")
 
     def setFixation(self,fix):
         self.eyeTracker.setFixation(fix/10)
 
-    def setImpact(self,impact):
-        self.eyeTracker.setClassicalImpact(impact)
+    def setDuration(self,duration):
+        self.duration_to_blur = duration
+
+    def setScreenLockDuration(self,duration):
+        self.screenLockTimeLimit = duration
+
+    def setSensitivity(self,sensitivity):
+        self.sensitivity = sensitivity
 
     def resetTracker(self):
         self.model.rmModel()
         self.eyeTracker.reset()
 
-    def start(self):
+    def start(self,element):
         modelData = self.model.getModel()
         self.eyeTracker.start()
-        if modelData is None:
-            self.show_calibration()
-        else:
-            self.eyeTracker.loadModel(modelData)
+        # if modelData is None:
+        self.show_calibration()
+        # else:
+        #     self.eyeTracker.loadModel(modelData)
         self.running = True
 
-    def stop(self):
+    def stop(self,element):
         self.running = False
-        self.vizContext.close()
         self.eyeTracker.stop()
         self.tracker.close()
 
     def closeEvent(self, event):
         # Call your function or perform cleanup here
-        self.stop()
+        self.stop(None)
         # Call the base class closeEvent to ensure default behavior
         super().closeEvent(event)
         quit()
@@ -305,26 +355,23 @@ class RightSideMenu(QFrame):
         self.setStyleSheet("background-color: rgba(26, 32, 48, 0.8);")
 
         self.mainMenu = MainMenu()
-        self.settings = Settings()
-        self.customize = Customize()
+        self.advanced = Advanced()
+        # self.customize = Customize()
 
         self.__allMenus = {
             "Main" : self.mainMenu,
-            "Settings" : self.settings,
-            "Customize" : self.customize
+            "Advanced" : self.advanced,
+            # "Customize" : self.customize
         }
 
         self.menu_stack.addWidget(self.mainMenu)
-        self.menu_stack.addWidget(self.settings)
-        self.menu_stack.addWidget(self.customize)
+        self.menu_stack.addWidget(self.advanced)
+        # self.menu_stack.addWidget(self.customize)
         self.menu_stack.setCurrentIndex(0)
-        self.menus = 3
+        self.menus = 2
 
-        self.mainMenu.setSignal("Settings", lambda : self.switchMenu(1))
-        self.mainMenu.setSignal("Customize", lambda : self.switchMenu(2))
-
-        self.settings.setSignal("Back", lambda : self.switchMenu(0))
-        self.customize.setSignal("Back", lambda : self.switchMenu(0))
+        self.mainMenu.setSignal("Advanced", lambda _ : self.switchMenu(1))
+        self.advanced.setSignal("Back", lambda _ : self.switchMenu(0))
 
 
     def switchMenu(self,index):
@@ -359,6 +406,13 @@ class Menu(QFrame):
         tmp_layout.addWidget(self.right_buttons[-1])
         self.right_layout.addLayout(tmp_layout)
 
+    def add_switch(self,name,signal=None):
+        tmp_layout = QHBoxLayout()
+        tmp_layout.setAlignment(Qt.AlignCenter | Qt.AlignHCenter)
+        self.right_buttons.append(EyePilotSwitch(name,signal = signal))
+        tmp_layout.addWidget(self.right_buttons[-1])
+        self.right_layout.addLayout(tmp_layout)
+
     def add_custom(self,button):
         tmp_layout = QHBoxLayout()
         self.right_buttons.append(button)
@@ -371,44 +425,20 @@ class MainMenu(Menu):
         super().__init__()
 
         self.add_button("Start")
-        self.add_button("Calibration")
-        self.add_button("Settings")
-        self.add_button("Customize")
+        self.add_button("Advanced")
 
-class Settings(Menu):
+class Advanced(Menu):
 
     def __init__(self):
         super().__init__()
 
-        self.add_custom(EyePilotScroll("Fixation Threshold","Fixation",init=8))
-        self.add_custom(EyePilotScroll("Classical Impact","Impact",init=2,start=0))
-        self.calibrationWidget = Calibration()
-
-        self.add_button("WindowSwitch OFF")
-        self.add_button("ControlMenu OFF")
-        self.add_button("FocusBlur OFF")
-
-        self.add_button("Reset Calibration")
+        self.add_button("Enable focus")
+        self.add_button("Enable Screen Lock")
+        self.add_custom(EyePilotScroll("Screen lock [s]","ScreenLockSeconds",init=15, start=0, end=60))
+        self.add_custom(EyePilotScroll("Duration to blur [s]","Seconds",init=0,start=0, end=60))
+        self.add_custom(EyePilotScroll("Sensitivity","Sensitivity",init=1,start=1, end=10))
         self.add_button("Back")
 
-class Customize(Menu):
-
-    def __init__(self):
-        super().__init__()
-
-        self.calibrationWidget = Calibration()
-
-        DEEPSEA_BLUE = (10,50,150)
-        STEEL_GREY = (150,150,150)
-        CREAMY_ORANGE = (150,100,50)
-        LEAFY_GREEN = (100,150,100)
-
-        self.add_custom(EyePilotButtonColorChoice("DeepSea Blue", id = "ColorChange", color=DEEPSEA_BLUE))
-        self.add_custom(EyePilotButtonColorChoice("Steel Grey",   id = "ColorChange", color=STEEL_GREY))
-        self.add_custom(EyePilotButtonColorChoice("Creamy Orange",id = "ColorChange", color=CREAMY_ORANGE))
-        self.add_custom(EyePilotButtonColorChoice("Leafy Green",  id = "ColorChange", color=LEAFY_GREEN))
-
-        self.add_button("Back")
 
 if __name__ == "__main__":
     # sys.stdout = open(os.devnull, 'w')

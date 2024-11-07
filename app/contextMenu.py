@@ -73,6 +73,9 @@ class ContextMenuBtn(QWidget):
     def changeColor(self,color):
         self.btn.updateColor(color)
 
+    def click(self):
+        self.btn.click()
+
 class ContextMenu(QWidget):
 
     def __init__(self,
@@ -83,16 +86,22 @@ class ContextMenu(QWidget):
                 signal_4 = lambda x : x) -> None:
         x = screen_center[0]
         y = screen_center[1]
-        self.btn1 = ContextMenuBtn("Button 1",x-300,y+300, signal = signal_1)
+        self.btn1 = ContextMenuBtn("Button 1",x-300,y+300, signal = self.close)
         self.btn2 = ContextMenuBtn("Button 2",x-300,y-300, signal = signal_2)
         self.btn3 = ContextMenuBtn("Button 3",x+300,y+300, signal = signal_3)
         self.btn4 = ContextMenuBtn("Button 4",x+300,y-300, signal = signal_4)
+
+        self.btn1.setWindowFlag(Qt.WindowStaysOnTopHint)
+        self.btn2.setWindowFlag(Qt.WindowStaysOnTopHint)
+        self.btn3.setWindowFlag(Qt.WindowStaysOnTopHint)
+        self.btn4.setWindowFlag(Qt.WindowStaysOnTopHint)
 
         self.btn2.setImage(":/assets/mouse-duotone.svg")
         self.btn4.setImage(":/assets/mouse-right-click-duotone.svg")
         self.btn1.setImage(":/assets/x-circle.svg")
         self.btn3.setImage(":/assets/ellipsis-horizontal-circle-20-solid.svg")
         self.activated = False
+        self.remembered_position = None
 
     def execute(self, cursor):
         x = cursor[0]
@@ -105,7 +114,8 @@ class ContextMenu(QWidget):
             else:
                 btn.changeColor("rgba(150,150,150)")
 
-    def launch(self):
+    def launch(self,position_to_remember):
+        self.remembered_position = position_to_remember
         self.activated = True
         self.show()
 
@@ -131,6 +141,14 @@ class ContextMenu(QWidget):
         self.btn3.setText(t3)
         self.btn4.setText(t4)
 
+    def click(self,cursor):
+        x = cursor[0]
+        y = cursor[1]
+
+        if self.activated:
+            for btn in [self.btn1, self.btn2, self.btn3, self.btn4]:
+                if (x - btn.x)**2 + (y - btn.y)**2  < (btn.radius)**2:
+                    btn.click()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

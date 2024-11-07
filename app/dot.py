@@ -6,7 +6,7 @@ import random
 import resources_rc  # Import the compiled resource file
 
 class CircleWidget(QWidget):
-    def __init__(self):
+    def __init__(self,name="CircleWidget"):
         super().__init__()
         self.setWindowIcon(QIcon(":/icon.png"))
 
@@ -14,6 +14,9 @@ class CircleWidget(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.setGeometry(0, 0, 60, 60)
+        self.windowName = name
+        self.setWindowTitle(self.windowName)
+
 
         self.diameter = 100
         self.transparency = 50
@@ -28,6 +31,9 @@ class CircleWidget(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_position)
         self.timer.start(30)  # Update every second
+
+    def getWindowName(self):
+        return self.windowName
 
     def update_position(self):
         # Randomly generate new position within the screen boundaries
