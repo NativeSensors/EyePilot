@@ -19,8 +19,8 @@ class CircleWidget(QWidget):
 
 
         self.diameter = 100
-        self.transparency = 50
-        self.penWidth = 2
+        self.transparency = 20
+        self.penWidth = 6
 
         self.setColor(100, 0, 255)
 

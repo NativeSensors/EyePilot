@@ -255,7 +255,7 @@ class EyePilotButtonColorChoice(EyePilotButtonComponent):
                 font-size: 25px;
                 background-color: rgba(255, 255, 255, 0.0);
                 width: 300px;
-                height: 100px;
+                height: 120px;
                 min-height: 100px;
                 padding-left: 50px;
             }
