@@ -149,7 +149,99 @@ class EyePilotButton(EyePilotButtonComponent):
         self.setText(new_text)
 
     def click(self):
+        if self.signal:
+            self.signal()
 
+
+class EyePilotButton(EyePilotButtonComponent):
+    def __init__(self, text, id = None, signal=None, parent=None,
+                fontColor = "white",
+                color = "rgba(255, 255, 255, 0.0)",
+                colorHover1 = "rgba(56, 60, 79, 0.5)",
+                colorHover2 = "rgba(56, 60, 79, 0.3)",
+                width = "200px",
+                height = "45px",
+                max_width = "200px",
+                border_radius = "5px",
+                border = "0px solid #FF000000"):
+        super().__init__(text, id, parent)
+
+        self.fontColor = fontColor
+        self.color = color
+        self.colorHover1 = colorHover1
+        self.colorHover2 = colorHover2
+        self.width = width
+        self.height = height
+        self.max_width = max_width
+        self.border_radius = border_radius
+        self.border = border
+        # Set the style
+        button_style = f"""
+            QPushButton {{
+                color: {fontColor};
+                font-size: 25px;
+                background-color: {color};
+                width: {width};
+                height: {height};
+                max-width: {max_width};
+                margin-left: auto;
+                margin-right: auto;
+                border-radius: {border_radius};
+                border: {border};
+            }}
+
+            QPushButton:hover {{
+                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 {colorHover1}, stop:1 {colorHover2});
+                border-radius: {border_radius};
+            }}
+        """
+
+        self.setStyleSheet(button_style)
+        self.signal = signal
+        self.clicked.connect(self.click)
+
+    def setImage(self,image_path):
+        svg_renderer = QSvgRenderer(image_path)
+        pixmap = QPixmap(100, 100)  # Set size of the icon
+        pixmap.fill(Qt.transparent) # Ensure transparency
+        painter = QPainter(pixmap)
+        svg_renderer.render(painter)
+        painter.end()
+
+        # Set the SVG as an icon
+        icon = QIcon(pixmap)
+        self.setIcon(icon)
+        self.setIconSize(QSize(100, 100))
+
+    def updateColor(self,color):
+                # Set the style
+        self.color = color
+        button_style = f"""
+            QPushButton {{
+                color: {self.fontColor};
+                font-size: 25px;
+                background-color: {self.color};
+                width: {self.width};
+                height: {self.height};
+                max-width: {self.max_width};
+                margin-left: auto;
+                margin-right: auto;
+                border-radius: {self.border_radius};
+                border: {self.border};
+            }}
+
+            QPushButton:hover {{
+                background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 {self.colorHover1}, stop:1 {self.colorHover2});
+                border-radius: {self.border_radius};
+            }}
+        """
+
+        self.setStyleSheet(button_style)
+
+    def update_text(self, new_text):
+        self.setText(new_text)
+
+    def click(self):
         if self.signal:
             self.signal()
 
