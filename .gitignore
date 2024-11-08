@@ -1,6 +1,6 @@
 *.pyc
 *.png
-__tmp/*
+__tmp
 __pycache__/*
 venv/*
 build/*

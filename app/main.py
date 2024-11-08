@@ -9,7 +9,7 @@ from PySide2.QtGui import QIcon
 import resources_rc  # Import the compiled resource file
 
 from BlurWindow.blurWindow import GlobalBlur
-from components import EyePilotButton, EyePilotButtonColorChoice, EyePilotScroll
+from components import EyePilotButton, EyePilotButtonColorChoice, EyePilotScroll, EyeToggleComponent
 from calibration import Calibration
 from contextMenu import ContextMenu
 
@@ -382,11 +382,11 @@ class Settings(Menu):
 
         self.add_custom(EyePilotScroll("Fixation Threshold","Fixation",init=8))
         self.add_custom(EyePilotScroll("Classical Impact","Impact",init=2,start=0))
+        self.add_custom(EyeToggleComponent("Cursor OFF/ON"))
+        self.add_custom(EyeToggleComponent("Window Focus"))
+        self.add_custom(EyeToggleComponent("Display Blur"))
+        self.add_custom(EyeToggleComponent("Port open"))
         self.calibrationWidget = Calibration()
-
-        self.add_button("WindowSwitch OFF")
-        self.add_button("ControlMenu OFF")
-        self.add_button("FocusBlur OFF")
 
         self.add_button("Reset Calibration")
         self.add_button("Back")

@@ -1,7 +1,7 @@
 from PySide2.QtWidgets import QApplication, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy, QScrollBar, QLabel
-from PySide2.QtGui import QPainter, QIcon, QPixmap
+from PySide2.QtGui import QPainter, QIcon, QPixmap, QColor, QPen
 from PySide2.QtSvg import QSvgRenderer
-from PySide2.QtCore import Qt, QSize
+from PySide2.QtCore import Qt, QSize, QPropertyAnimation, QPoint
 
 from dot import CircleWidget
 
@@ -151,7 +151,6 @@ class EyePilotButton(EyePilotButtonComponent):
     def click(self):
         if self.signal:
             self.signal()
-
 
 class EyePilotButton(EyePilotButtonComponent):
     def __init__(self, text, id = None, signal=None, parent=None,
@@ -330,13 +329,13 @@ class EyePilotScroll(EyePilotScrollComponent):
                 min-width: 40px;
                 border-top-left-radius: 10px;
                 border-bottom-left-radius: 10px;
-                background: rgba(150,10,10, 0.2);
+                background: #ff0064;
             }
             QScrollBar::right-arrow:horizontal {
                 min-width: 40px;
                 border-top-right-radius: 10px;
                 border-bottom-right-radius: 10px;
-                background: rgba(10,50,150, 0.2);
+                background: #6400fa;
             }
 
             QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
@@ -378,3 +377,98 @@ class EyePilotScroll(EyePilotScrollComponent):
         if self.signal:
             self.signal(value)
         self.scrollbar.update_text(f"{value}")
+
+class ToggleButton(EyePilotComponent, QWidget):
+
+    def __init__(self, text, id = None, parent = None):
+        EyePilotComponent.__init__(self, text, id)  # Directly initialize EyePilotComponent
+        QWidget.__init__(self, parent)  # Directly initialize QWidget with the parent argument
+
+        # Set up the main toggle button's appearance
+        self.length = 70
+        self.radius = 30
+        self.setFixedSize(self.length, self.radius)
+
+        # Create the dot that will move on toggle
+        self.dot = QPushButton(self)
+        self.dot.setFixedSize(self.radius, self.radius)
+        self.dot.setStyleSheet('''
+            background-color: rgb(255,0,100);
+            border-radius: 14px;
+        ''')
+        self.dot.move(0, 0)  # Initial position on the left
+
+        # Make the dot transparent to mouse events
+        self.dot.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+
+        # Initialize the toggle state
+        self.is_toggled = False
+
+        # Set up animation for moving the dot
+        self.animation = QPropertyAnimation(self.dot, b"pos")
+        self.animation.setDuration(200)  # Animation duration (200 ms)
+
+    def paintEvent(self, event):
+        """Override the paint event to draw a background rail."""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # Set color based on toggle state
+        rail_color = QColor(231, 198, 70,80) if self.is_toggled else QColor(100,0,250,50)
+        painter.setBrush(rail_color)
+
+        # Set up the border (pen) for the rail
+        border_color = QColor(231, 198, 70,100) if self.is_toggled else QColor(100,0,250,100)  # Change this to your preferred border color
+        border_width = 2  # Adjust the thickness as needed
+        pen = QPen(border_color, border_width)
+        painter.setPen(pen)
+
+        # Draw the rail (background rectangle with rounded corners)
+        painter.drawRoundedRect(0, 0, self.width(), self.height(), 15, 15)
+
+    def mousePressEvent(self, event):
+        """Override the mouse press event to toggle the switch."""
+        # Toggle the state
+        self.is_toggled = not self.is_toggled
+
+        # Determine start and end positions for the dot animation
+        if self.is_toggled:
+            end_pos = QPoint(self.length-self.radius, 0)  # Move to the right
+        else:
+            end_pos = QPoint(0, 0)  # Move to the left
+
+        # Animate the dot's position
+        self.animation.setEndValue(end_pos)
+        self.animation.start()
+
+        # Trigger repaint to update the rail color
+        self.update()
+
+    def status(self):
+        return self.is_toggled
+
+
+class EyeToggleComponent(EyePilotComponent,QWidget):
+
+    def __init__(self,text, id = None, parent = None):
+        EyePilotComponent.__init__(self, text, parent)
+        QWidget.__init__(self)
+
+        self.layout = QHBoxLayout(self)
+
+        self.toggleBtn = ToggleButton(text, id, parent)
+        self.label = QLabel(text)
+        label_style = """
+            QLabel {
+                color: white;
+                font-size: 25px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        """
+        self.label.setStyleSheet(label_style);
+
+        self.layout.addWidget(self.toggleBtn)
+        self.layout.addWidget(self.label)
+        print(EyeToggleComponent)
+

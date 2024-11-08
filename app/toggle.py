@@ -5,18 +5,18 @@ from PySide2.QtGui import QPainter, QColor
 class ToggleButton(QWidget):
     def __init__(self):
         super().__init__()
-        
+
         # Set up the main toggle button's appearance
         self.length = 100
         self.radius = 30
         self.setFixedSize(self.length, self.radius)
-        
+
         # Create the dot that will move on toggle
         self.dot = QPushButton(self)
         self.dot.setFixedSize(self.radius - 2, self.radius-2)
         self.dot.setStyleSheet("background-color: #ff0064; border-radius: 14px;")
         self.dot.move(2, 1)  # Initial position on the left
-        
+
         # Make the dot transparent to mouse events
         self.dot.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
@@ -35,7 +35,7 @@ class ToggleButton(QWidget):
         # Set color based on toggle state
         rail_color = QColor("#6400fa") if self.is_toggled else QColor("lightgray")
         painter.setBrush(rail_color)
-        
+
         # Draw the rail (background rectangle with rounded corners)
         painter.drawRoundedRect(0, 0, self.width(), self.height(), 15, 15)
 
@@ -53,10 +53,12 @@ class ToggleButton(QWidget):
         # Animate the dot's position
         self.animation.setEndValue(end_pos)
         self.animation.start()
-        
+
         # Trigger repaint to update the rail color
         self.update()
 
+    def status(self):
+        return self.is_toggled
 
 class ToggleButtonDemo(QWidget):
     def __init__(self):
