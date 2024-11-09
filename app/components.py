@@ -408,6 +408,11 @@ class ToggleButton(EyePilotComponent, QWidget):
         self.animation = QPropertyAnimation(self.dot, b"pos")
         self.animation.setDuration(200)  # Animation duration (200 ms)
 
+        self.cb = None
+
+    def add_cb(self,cb):
+        self.cb = cb
+
     def paintEvent(self, event):
         """Override the paint event to draw a background rail."""
         painter = QPainter(self)
@@ -443,9 +448,14 @@ class ToggleButton(EyePilotComponent, QWidget):
 
         # Trigger repaint to update the rail color
         self.update()
+        self.__status_callback()
 
     def status(self):
         return self.is_toggled
+
+    def __status_callback(self):
+        if self.cb:
+            self.cb(self.is_toggled)
 
 
 class EyeToggleComponent(EyePilotComponent,QWidget):
@@ -472,3 +482,5 @@ class EyeToggleComponent(EyePilotComponent,QWidget):
         self.layout.addWidget(self.label)
         print(EyeToggleComponent)
 
+    def addSignal(self,signal):
+        self.toggleBtn.add_cb(signal)

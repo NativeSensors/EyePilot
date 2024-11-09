@@ -3,7 +3,7 @@ import time
 import sys
 import os
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QScrollBar
+from PySide2.QtWidgets import QDesktopWidget, QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedLayout, QFrame, QPushButton, QLabel, QScrollBar
 from PySide2.QtCore import Qt, QTimer
 from PySide2.QtGui import QIcon
 import resources_rc  # Import the compiled resource file
@@ -15,6 +15,7 @@ from contextMenu import ContextMenu
 
 from contextTracker import VisContext
 
+from blur import Blur
 from dot import CircleWidget
 from contextMenu import ContextMenu
 
@@ -136,6 +137,28 @@ class MyMainWindow(QMainWindow):
         right_frame.setSignal("Settings","Fixation",signal=self.setFixation)
         right_frame.setSignal("Settings","Impact",signal=self.setImpact)
         right_frame.setSignal("Settings","Reset Calibration",signal=self.resetTracker)
+        right_frame.setSignal("Settings","Assistive [WiP]",signal=self.assistive_window)
+        right_frame.setSignal("Settings","Cursor OFF/ON",signal=self.feature_cursor)
+        right_frame.setSignal("Settings","Window Focus",signal=self.feature_focus)
+        right_frame.setSignal("Settings","Display Blur",signal=self.feature_blur)
+        right_frame.setSignal("Settings","Port open [WiP]",signal=self.feature_port)
+
+        desktop = QDesktopWidget()
+        self.screen_geometry = desktop.screenGeometry(desktop.primaryScreen())
+
+        self.calibration_points = 0
+        self.prev_point = None
+        self.blur_widget = Blur()
+        self.blur_widget.setOnQuit(self.stop)
+
+        self.time_start = time.time()
+        self.duration_to_blur = 0
+
+        self.focus = False
+        self.screenLock = False
+        self.screenLockCounter = time.time()
+        self.screenLockTimeLimit = 15
+        self.sensitivity = 1
 
         self.calibrationWidget = Calibration()
         self.calibrationWidget.setOnQuit(self.stop_calibration)
@@ -161,6 +184,13 @@ class MyMainWindow(QMainWindow):
         self.fix_debounce = 51
         self.prev_cursor = pyautogui.position()
 
+        self.feature_status_cursor = False
+        self.feature_status_focus = False
+        self.feature_status_blur = False
+        self.feature_status_port = False
+        self.feature_assistive_control = False
+
+
     def show_calibration(self):
         self.calibrationON = True
         self.eyeTracker.calibrationOn()
@@ -180,6 +210,27 @@ class MyMainWindow(QMainWindow):
         pyautogui.moveTo(x, y)
         pyautogui.mouseDown()
         pyautogui.mouseUp()
+
+    ## feature matrix
+
+    def feature_cursor(self,status):
+        if status:
+            self.tracker.hide()
+        else:
+            self.tracker.show()
+
+    def feature_focus(self,status):
+        self.feature_status_focus = status
+
+    def feature_blur(self,status):
+        self.feature_status_blur = status
+
+    def feature_port(self,status):
+        self.feature_status_port = status
+
+    def assistive_window(self,status):
+        self.feature_assistive_control = status
+
 
     ########################### Window switcher
 
@@ -227,6 +278,29 @@ class MyMainWindow(QMainWindow):
                     return True
         return False
 
+    def blur_display(self,point):
+        center_x = self.screen_geometry.width() // 2
+        center_y = self.screen_geometry.height() // 2
+        screen = QDesktopWidget().screenGeometry(0)
+        if abs(point[0] - center_x) > (int(screen.width()*self.sensitivity)) or abs(point[1] - center_y) > (int(screen.height()*self.sensitivity)):
+            blur_focus = False
+            blur_duration = False
+            if self.focus and (fix > 0.6):
+                blur_focus = True
+            if (time.time() - self.time_start) > self.duration_to_blur:
+                blur_duration = True
+
+            if (blur_focus or not self.focus) and blur_duration:
+                self.blur_widget.show()
+                if (time.time() - self.screenLockCounter > self.screenLockTimeLimit) and self.screenLock:
+                    ctypes.windll.user32.LockWorkStation()
+        else:
+            self.time_start = time.time()
+            self.blur_widget.quit()
+            self.screenLockCounter = time.time()
+
+            pass
+
     ##########################
 
     def main_loop(self):
@@ -242,27 +316,34 @@ class MyMainWindow(QMainWindow):
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
                 self.calibrationWidget.setRadiusFit(2*acceptance_radius)
             else:
-                if fix > 0.8 and 1 < time.time() - self.fix_start:
-                    self.fix_start = time.time()
-                    self.contextMenu.launch([point[0], point[1]])
-                    # self.vizContext.start()
-                    # self.vizContext.setPosition(point[0], point[1])
-                elif not fix:
-                    self.contextMenu.execute([point[0], point[1]])
-                    if 1 < time.time() - self.fix_start:
-                        self.contextMenu.click([point[0], point[1]])
+                if self.feature_assistive_control:
+                    if fix > 0.8 and 1 < time.time() - self.fix_start:
+                        self.fix_start = time.time()
+                        self.contextMenu.launch([point[0], point[1]])
+                        # self.vizContext.start()
+                        # self.vizContext.setPosition(point[0], point[1])
+                    elif not fix:
+                        self.contextMenu.execute([point[0], point[1]])
+                        if 1 < time.time() - self.fix_start:
+                            self.contextMenu.click([point[0], point[1]])
 
-                if window_switch_on:
+                if self.feature_status_focus:
                     if self.fix_debounce > 10:
                         self.check_window(point)
                         self.fix_debounce = 0
                     else:
                         self.fix_debounce += 1
 
-                if blink and fix:
-                    # self.contextMenu.hide()
-                    # self.press(x,y)
-                    pass
+                if self.feature_status_blur:
+                    if self.fix_debounce > 10:
+                        self.blur_display(point)
+                        self.fix_debounce = 0
+                    else:
+                        self.fix_debounce += 1
+
+                if self.feature_port:
+                    pass # TODO: open socket and send json
+
 
     def setFixation(self,fix):
         self.eyeTracker.setFixation(fix/10)
@@ -382,6 +463,7 @@ class Settings(Menu):
 
         self.add_custom(EyePilotScroll("Fixation Threshold","Fixation",init=8))
         self.add_custom(EyePilotScroll("Classical Impact","Impact",init=2,start=0))
+        self.add_custom(EyeToggleComponent("Assistive [WiP]"))
         self.add_custom(EyeToggleComponent("Cursor OFF/ON"))
         self.add_custom(EyeToggleComponent("Window Focus"))
         self.add_custom(EyeToggleComponent("Display Blur"))
