@@ -26,9 +26,24 @@ import win32gui
 import win32api
 import win32con
 import ctypes
+import threading
+import socket
+import json
 
 from tracker import Tracker
 
+class MouseWatcher:
+
+    ## To check if cursor is not moving
+    def __init__(self):
+        self.prev_cursor_pos = pyautogui.position()
+
+    def isMoving(self):
+        if self.prev_cursor_pos == pyautogui.position():
+            return False
+        else:
+            self.prev_cursor_pos = pyautogui.position()
+            return True
 class ModelSaver:
 
     def __init__(self):
@@ -70,17 +85,54 @@ def is_window_transparent(hwnd):
 
     return is_transparent != 0
 
+class EyeSocket:
+
+    def __init__(self):
+        self.HOST = '127.0.0.1'  # localhost
+        self.PORT = 65432        # Port to listen on (use any free port > 1024)
+        self.server_socket = None
+        self.thread = threading.Thread(target=self.acceptIncoming)
+        self.running = False
+        self.clients = []
+
+    def acceptIncoming(self):
+        try:
+            while self.running:
+                client_socket, client_address = self.server_socket.accept()
+                self.clients.append(client_socket, client_address)
+        except Exception as e:
+            print(f"Caught {e}")
+            pass
+
+    def open(self):
+        # Create a UDP socket
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.server_socket.bind((HOST, PORT))
+        self.running = True
+
+    def send(self,data : dict) -> None:
+        if self.server_socket:
+            message = json.dumps(data)
+            for client_socket, client_address in self.clients:
+                self.server_socket.sendto(message.encode(), client_address)
+
+    def close(self,):
+        self.running = False
+        self.server_socket.close()
+        self.server_socket = None
+
+
 class MyMainWindow(QMainWindow):
 
     def moveEvent(self, event) -> None:
         time.sleep(0.02)  # sleep for 20ms
         layout_center  = self.left_layout.geometry().center()
-        self.tracker.setPosition(self.geometry().x() + 200, self.geometry().y() + 200)
+        self.tracker.setPosition(self.geometry().x() + 160, self.geometry().y() + 200)
 
     def resizeEvent(self, event) -> None:
         time.sleep(0.02)  # sleep for 20ms
         layout_center  = self.left_layout.geometry().center()
-        self.tracker.setPosition(self.geometry().x() + 200, self.geometry().y() + 200)
+        self.tracker.setPosition(self.geometry().x() + 160, self.geometry().y() + 200)
 
     def __init__(self):
         super().__init__()
@@ -106,12 +158,12 @@ class MyMainWindow(QMainWindow):
         main_layout.addWidget(left_frame, stretch=1)
 
         # Add a label to left frame (optional)
-        label_left = QLabel("EyePilot")
-        label_left.setStyleSheet("color: white; font-size: 40px;")
-        label_left.setAlignment(Qt.AlignCenter)
+        self.label_left = QLabel("EyePilot")
+        self.label_left.setStyleSheet("color: white; font-size: 40px;")
+        self.label_left.setAlignment(Qt.AlignCenter)
         self.left_layout = QVBoxLayout()
         left_frame.setLayout(self.left_layout)
-        self.left_layout.addWidget(label_left)
+        self.left_layout.addWidget(self.label_left)
 
         # Create a frame to hold right side content
         right_frame = RightSideMenu()
@@ -119,13 +171,13 @@ class MyMainWindow(QMainWindow):
 
         self.landing_spot = CircleWidget()
         layout_center  = self.left_layout.geometry().center()
-        self.landing_spot.setPosition(layout_center.x() + 200, layout_center.y() + 200)
+        self.landing_spot.setPosition(layout_center.x() + 160, layout_center.y() + 200)
         self.landing_spot.setColor(102,102,102)
         self.landing_spot.setParent(self)
 
         self.tracker = CircleWidget("EyeGesturesCursor")
         layout_center  = self.left_layout.geometry().center()
-        self.tracker.setPosition(self.geometry().x() + layout_center.x() + 200, self.geometry().y() + layout_center.y() + 200)
+        self.tracker.setPosition(self.geometry().x() + layout_center.x() + 150, self.geometry().y() + layout_center.y() + 200)
         self.tracker.setColor(100, 0, 255)
         # self.tracker.setTransparency(0)
         self.tracker.setWindowFlag(Qt.WindowStaysOnTopHint)
@@ -138,6 +190,7 @@ class MyMainWindow(QMainWindow):
         right_frame.setSignal("Settings","Impact",signal=self.setImpact)
         right_frame.setSignal("Settings","Reset Calibration",signal=self.resetTracker)
         right_frame.setSignal("Settings","Assistive [WiP]",signal=self.assistive_window)
+        right_frame.setSignal("Settings","Move mouse on focus",signal=self.feature_mouse_move)
         right_frame.setSignal("Settings","Cursor OFF/ON",signal=self.feature_cursor)
         right_frame.setSignal("Settings","Window Focus",signal=self.feature_focus)
         right_frame.setSignal("Settings","Display Blur",signal=self.feature_blur)
@@ -183,12 +236,20 @@ class MyMainWindow(QMainWindow):
 
         self.fix_debounce = 51
         self.prev_cursor = pyautogui.position()
+        self.fixation_threshold = 0.8
 
         self.feature_status_cursor = False
         self.feature_status_focus = False
         self.feature_status_blur = False
         self.feature_status_port = False
         self.feature_assistive_control = False
+        self.feature_status_mouse_move = False
+
+        self.sock = EyeSocket()
+
+        # self.demo_start = time.time()
+        # self.demo_duration_max = 2 * 60
+        self.mouse = MouseWatcher()
 
 
     def show_calibration(self):
@@ -211,7 +272,10 @@ class MyMainWindow(QMainWindow):
         pyautogui.mouseDown()
         pyautogui.mouseUp()
 
-    ## feature matrix
+    #################### feature matrix
+
+    def feature_mouse_move(self,status):
+        self.feature_status_mouse_move = status
 
     def feature_cursor(self,status):
         if status:
@@ -227,6 +291,10 @@ class MyMainWindow(QMainWindow):
 
     def feature_port(self,status):
         self.feature_status_port = status
+        if status:
+            self.sock.open()
+        else:
+            self.sock.close()
 
     def assistive_window(self,status):
         self.feature_assistive_control = status
@@ -303,7 +371,18 @@ class MyMainWindow(QMainWindow):
 
     ##########################
 
+    def updateMainLabel(self,title):
+        self.label_left.setText(f"{title}")
+
     def main_loop(self):
+        # if (time.time() - self.demo_start) > self.demo_duration_max:
+        #     self.stop()
+        #     self.close()
+        #     return
+
+        # time_left = self.demo_duration_max - (time.time() - self.demo_start)
+        # self.updateMainLabel(f"EyeFocus\nDemo time left\n{int(time_left/60)}:{int(time_left%60)}")
+
         window_switch_on = False
         if self.running:
             point, calibration, blink, fix, acceptance_radius, calibration_radius = self.eyeTracker.step()
@@ -327,8 +406,9 @@ class MyMainWindow(QMainWindow):
                         if 1 < time.time() - self.fix_start:
                             self.contextMenu.click([point[0], point[1]])
 
-                if self.feature_status_focus:
-                    if self.fix_debounce > 10:
+                # this 0.3 check prevents from EyeGestures to take control over mouse
+                if self.feature_status_focus and fix > 0.1 and not self.mouse.isMoving():
+                    if self.fix_debounce > 20:
                         self.check_window(point)
                         self.fix_debounce = 0
                     else:
@@ -341,11 +421,27 @@ class MyMainWindow(QMainWindow):
                     else:
                         self.fix_debounce += 1
 
-                if self.feature_port:
-                    pass # TODO: open socket and send json
+                fix_to_test = self.fixation_threshold if self.fixation_threshold > 0.3 else 0.3
+                if self.feature_status_mouse_move and fix > fix_to_test:
+                    pyautogui.moveTo(
+                        x=point[0],
+                        y=point[1]
+                    )
+
+                if self.feature_status_port:
+                    print(self.feature_status_port)
+                    payload = {
+                        "x" : point[0],
+                        "y" : point[1],
+                        "blink" : blink,
+                        "fixation" : fix,
+                    }
+
+                    self.sock.send(payload)
 
 
     def setFixation(self,fix):
+        self.fixation_threshold = fix/10
         self.eyeTracker.setFixation(fix/10)
 
     def setImpact(self,impact):
@@ -464,6 +560,7 @@ class Settings(Menu):
         self.add_custom(EyePilotScroll("Fixation Threshold","Fixation",init=8))
         self.add_custom(EyePilotScroll("Classical Impact","Impact",init=2,start=0))
         self.add_custom(EyeToggleComponent("Assistive [WiP]"))
+        self.add_custom(EyeToggleComponent("Move mouse on focus"))
         self.add_custom(EyeToggleComponent("Cursor OFF/ON"))
         self.add_custom(EyeToggleComponent("Window Focus"))
         self.add_custom(EyeToggleComponent("Display Blur"))
