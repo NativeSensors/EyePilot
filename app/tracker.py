@@ -3,7 +3,7 @@ import random
 import numpy as np
 import sklearn.linear_model as scireg
 from eyeGestures.utils import VideoCapture
-from eyeGestures.eyegestures import EyeGestures_v2
+from eyeGestures import EyeGestures_v3
 
 from screeninfo import get_monitors
 
