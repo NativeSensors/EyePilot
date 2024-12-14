@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='EyePilot_0_3_1a_demo',
+    name='EyePilot_0_3_1a',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

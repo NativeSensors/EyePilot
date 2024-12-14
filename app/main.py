@@ -241,8 +241,8 @@ class MyMainWindow(QMainWindow):
 
         self.sock = EyeSocket()
 
-        self.demo_start = time.time()
-        self.demo_duration_max = 2 * 60
+        # self.demo_start = time.time()
+        # self.demo_duration_max = 2 * 60
         self.mouse = MouseWatcher()
 
 
@@ -367,13 +367,13 @@ class MyMainWindow(QMainWindow):
         self.label_left.setText(f"{title}")
 
     def main_loop(self):
-        if (time.time() - self.demo_start) > self.demo_duration_max:
-            self.stop()
-            self.close()
-            return
+        # if (time.time() - self.demo_start) > self.demo_duration_max:
+        #     self.stop()
+        #     self.close()
+        #     return
 
-        time_left = self.demo_duration_max - (time.time() - self.demo_start)
-        self.updateMainLabel(f"EyeFocus\nDemo time left\n{int(time_left/60)}:{int(time_left%60)}")
+        # time_left = self.demo_duration_max - (time.time() - self.demo_start)
+        # self.updateMainLabel(f"EyeFocus\nDemo time left\n{int(time_left/60)}:{int(time_left%60)}")
 
         window_switch_on = False
         if self.running:
