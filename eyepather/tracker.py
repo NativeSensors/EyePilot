@@ -34,9 +34,6 @@ class Tracker:
     def start(self):
         self.cap = VideoCapture(0)
 
-    def saveModel(self):
-        return self.gestures.saveModel()
-
     def loadModel(self, modelData):
         self.gestures.loadModel(modelData)
 

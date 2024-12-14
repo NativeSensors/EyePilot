@@ -12,7 +12,7 @@ a = Analysis(
     hookspath=['.'],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['PyQt5','PyQt6'],
     noarchive=False,
 )
 pyz = PYZ(a.pure, a.zipped_data)
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='EyePilot_0_2_0a',
+    name='EyePilot_0_3_1a_demo',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

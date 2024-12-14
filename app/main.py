@@ -63,13 +63,6 @@ class ModelSaver:
         else:
             return None
 
-    def saveModel(self, model_data):
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
-        model_path = os.path.join(self.path, self.model_name)
-        with open(model_path, 'wb') as model_file:
-            model_file.write(model_data)
-
     def rmModel(self):
         model_path = os.path.join(self.path, self.model_name)
         if os.path.exists(model_path):
@@ -186,8 +179,6 @@ class MyMainWindow(QMainWindow):
         right_frame.setSignal("Customize","ColorChange",signal=self.changeTrackerColor)
         right_frame.setSignal("Main","Calibration",signal=self.show_calibration)
         right_frame.setSignal("Main","Start",signal=self.start)
-        right_frame.setSignal("Settings","Fixation",signal=self.setFixation)
-        right_frame.setSignal("Settings","Impact",signal=self.setImpact)
         right_frame.setSignal("Settings","Reset Calibration",signal=self.resetTracker)
         right_frame.setSignal("Settings","Assistive [WiP]",signal=self.assistive_window)
         right_frame.setSignal("Settings","Move mouse on focus",signal=self.feature_mouse_move)
@@ -213,6 +204,9 @@ class MyMainWindow(QMainWindow):
         self.screenLockTimeLimit = 15
         self.sensitivity = 1
 
+        self.calibration_iterator = 0
+        self.calibration_max = 25
+        self.prev_calibration_point = [0,0]
         self.calibrationWidget = Calibration()
         self.calibrationWidget.setOnQuit(self.stop_calibration)
 
@@ -247,20 +241,18 @@ class MyMainWindow(QMainWindow):
 
         self.sock = EyeSocket()
 
-        # self.demo_start = time.time()
-        # self.demo_duration_max = 2 * 60
+        self.demo_start = time.time()
+        self.demo_duration_max = 2 * 60
         self.mouse = MouseWatcher()
 
 
     def show_calibration(self):
+        self.calibration_iterator = 0
         self.calibrationON = True
         self.eyeTracker.calibrationOn()
         self.calibrationWidget.show()
 
     def stop_calibration(self):
-        modelData = self.eyeTracker.saveModel()
-        self.model.saveModel(modelData)
-
         self.calibrationON = False
         self.eyeTracker.calibrationOff()
 
@@ -375,13 +367,13 @@ class MyMainWindow(QMainWindow):
         self.label_left.setText(f"{title}")
 
     def main_loop(self):
-        # if (time.time() - self.demo_start) > self.demo_duration_max:
-        #     self.stop()
-        #     self.close()
-        #     return
+        if (time.time() - self.demo_start) > self.demo_duration_max:
+            self.stop()
+            self.close()
+            return
 
-        # time_left = self.demo_duration_max - (time.time() - self.demo_start)
-        # self.updateMainLabel(f"EyeFocus\nDemo time left\n{int(time_left/60)}:{int(time_left%60)}")
+        time_left = self.demo_duration_max - (time.time() - self.demo_start)
+        self.updateMainLabel(f"EyeFocus\nDemo time left\n{int(time_left/60)}:{int(time_left%60)}")
 
         window_switch_on = False
         if self.running:
@@ -394,6 +386,12 @@ class MyMainWindow(QMainWindow):
                 self.calibrationWidget.setRadius(2*calibration_radius)
                 self.calibrationWidget.setPositionFit(calibration[0], calibration[1])
                 self.calibrationWidget.setRadiusFit(2*acceptance_radius)
+                if self.prev_calibration_point[0] != calibration[0] or self.prev_calibration_point[1] != calibration[1]:
+                    self.calibration_iterator+=1
+                    self.prev_calibration_point = calibration
+                if self.calibration_iterator >= self.calibration_max:
+                    self.calibrationWidget.quit()
+                    print("self.calibrationWidget.quit()")
             else:
                 if self.feature_assistive_control:
                     if fix > 0.8 and 1 < time.time() - self.fix_start:
@@ -439,13 +437,6 @@ class MyMainWindow(QMainWindow):
 
                     self.sock.send(payload)
 
-
-    def setFixation(self,fix):
-        self.fixation_threshold = fix/10
-        self.eyeTracker.setFixation(fix/10)
-
-    def setImpact(self,impact):
-        self.eyeTracker.setClassicalImpact(impact)
 
     def resetTracker(self):
         self.model.rmModel()
@@ -557,8 +548,6 @@ class Settings(Menu):
     def __init__(self):
         super().__init__()
 
-        self.add_custom(EyePilotScroll("Fixation Threshold","Fixation",init=8))
-        self.add_custom(EyePilotScroll("Classical Impact","Impact",init=2,start=0))
         self.add_custom(EyeToggleComponent("Assistive [WiP]"))
         self.add_custom(EyeToggleComponent("Move mouse on focus"))
         self.add_custom(EyeToggleComponent("Cursor OFF/ON"))

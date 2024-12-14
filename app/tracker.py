@@ -22,9 +22,9 @@ class Tracker:
 
         self.cap = None
         self.monitor = list(filter(lambda monitor: monitor.is_primary == True ,get_monitors()))[0]
-        self.gestures = EyeGestures_v2()
-        x = np.arange(0, 1.1, 0.2)
-        y = np.arange(0, 1.1, 0.2)
+        self.gestures = EyeGestures_v3()
+        x = np.arange(0, 1.1, 0.33)
+        y = np.arange(0, 1.1, 0.33)
 
         xx, yy = np.meshgrid(x, y)
 
@@ -32,15 +32,10 @@ class Tracker:
         np.random.shuffle(calibration_map)
         self.gestures.uploadCalibrationMap(calibration_map,context="main")
 
-        self.gestures.enableCNCalib()
-        self.gestures.setClassicImpact(2)
         self.calibration = False
 
     def start(self):
         self.cap = VideoCapture(0)
-
-    def saveModel(self):
-        return self.gestures.saveModel()
 
     def loadModel(self, modelData):
         self.gestures.loadModel(modelData)
@@ -62,12 +57,6 @@ class Tracker:
 
     def reset(self):
         self.gestures.reset()
-
-    def setFixation(self,fix):
-        self.gestures.setFixation(fix)
-
-    def setClassicalImpact(self,CN):
-        self.gestures.setClassicImpact(CN)
 
     def step(self):
         _, frame = self.cap.read()
