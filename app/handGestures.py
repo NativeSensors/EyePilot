@@ -55,7 +55,6 @@ class Hand:
                     self.landmarks = self._landmarks(landmark)
             else:
                 self.landmarks = None
-            print(f"self.landmarks: {self.landmarks}")
         except Exception as e:
             print(f"Exception in Hand process: {e}")
             return None
@@ -67,7 +66,7 @@ class Hand:
                 # finger2 = Finger(self.getLandmarks()[10:15])
                 # finger3 = Finger(self.getLandmarks()[15:20])
                 # finger4 = Finger(self.getLandmarks()[20:25])
-                pointed = finger1.point(thumb.getPointer(),15000)
+                pointed = finger1.point(thumb.getPointer(),2000)
                 cursor = self.getLandmarks()[4]
                 if len(pointed) > 0:
                     if not self.activated:
@@ -90,7 +89,7 @@ class Thumb:
 
     def __init__(self,points):
         self.points = points
-        if len(self.points) > 0: 
+        if len(self.points) > 0:
             self.pointer = points[-1]
         else:
             self.pointer = []

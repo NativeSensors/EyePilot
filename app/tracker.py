@@ -47,6 +47,10 @@ class Tracker:
         self.base_x = 0
         self.base_y = 0
 
+        self.click = lambda x : None
+        self.hold = lambda x : None
+        self.release = lambda x : None
+
     def start(self):
         self.cap = VideoCapture(0)
 
@@ -72,12 +76,18 @@ class Tracker:
         self.gestures.reset()
 
     def pinch_activated(self,pos):
+        pos = (self.base_x + self.hand_x, self.base_y + self.hand_y)
+        self.click(pos)
         pass
 
     def pinch_hold(self,pos):
+        pos = (self.base_x + self.hand_x, self.base_y + self.hand_y)
+        self.hold(pos)
         pass
 
     def pinch_released(self,pos):
+        pos = (self.base_x + self.hand_x, self.base_y + self.hand_y)
+        self.release(pos)
         pass
 
     def step(self):
@@ -101,14 +111,22 @@ class Tracker:
 
         return (event.point, cevent.point, event.blink, event.fixation, cevent.acceptance_radius, cevent.calibration_radius)
 
-    def getHand(self,base_x,base_y):
-        print(self.hand_x,self.hand_y)
+    def getHand(self,base_x,base_y,
+                click = lambda _ : None,
+                hold = lambda _ : None,
+                release = lambda _ : None):
+        self.click = click
+        self.hold = hold
+        self.release = release
 
         diff_base_x = abs(base_x - self.base_x)
         diff_base_y = abs(base_y - self.base_y)
 
-        if diff_base_x + diff_base_y > 500:
+        if diff_base_x + diff_base_y > 200:
             self.base_x = base_x
             self.base_y = base_y
+            self.hand_x = 0
+            self.hand_y = 0
 
         return (self.base_x + self.hand_x, self.base_y + self.hand_y)
+

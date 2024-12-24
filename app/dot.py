@@ -18,9 +18,9 @@ class CircleWidget(QWidget):
         self.setWindowTitle(self.windowName)
 
 
-        self.diameter = 100
+        self.diameter = 60
         self.transparency = 20
-        self.penWidth = 6
+        self.penWidth = 3
 
         self.setColor(100, 0, 255)
 

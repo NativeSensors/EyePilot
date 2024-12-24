@@ -265,10 +265,17 @@ class MyMainWindow(QMainWindow):
     def changeTrackerColor(self,color):
         self.tracker.setColor(color[0],color[1],color[2])
 
+    def onPress(self,pos):
+        self.handTracker.setColor(125, 125, 125)
+
     def press(self,x,y):
         pyautogui.moveTo(x, y)
         pyautogui.mouseDown()
         pyautogui.mouseUp()
+
+    def onRelease(self,pos):
+        self.handTracker.setColor(0, 125, 50)
+        self.press(pos[0],pos[1])
 
     #################### feature matrix
 
@@ -388,12 +395,20 @@ class MyMainWindow(QMainWindow):
 
             self.tracker.setPosition(point[0], point[1])
 
-            hand_x, hand_y = self.eyeTracker.getHand(point[0], point[1])
+            hand_x, hand_y = self.eyeTracker.getHand(
+                point[0],
+                point[1],
+                click = self.onPress,
+                release = self.onRelease
+            )
             if int(hand_x) == int(point[0]) and int(hand_y) == int(point[1]):
                 self.handTracker.hide()
             else:
                 self.handTracker.show()
-                self.handTracker.setPosition(hand_x, hand_y)
+                self.handTracker.setPosition(
+                    hand_x,
+                    hand_y,
+                )
 
             if self.calibrationON:
                 self.calibrationWidget.setPosition(calibration[0], calibration[1])
