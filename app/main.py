@@ -244,6 +244,12 @@ class MyMainWindow(QMainWindow):
         # self.demo_start = time.time()
         # self.demo_duration_max = 2 * 60
         self.mouse = MouseWatcher()
+        self.handTracker = CircleWidget("HandGesturesTracker")
+        layout_center  = self.left_layout.geometry().center()
+        self.handTracker.setPosition(self.geometry().x() + layout_center.x() + 150, self.geometry().y() + layout_center.y() + 200)
+        self.handTracker.setColor(0, 125, 50)
+        # self.tracker.setTransparency(0)
+        self.handTracker.setWindowFlag(Qt.WindowStaysOnTopHint)
 
 
     def show_calibration(self):
@@ -377,9 +383,17 @@ class MyMainWindow(QMainWindow):
 
         window_switch_on = False
         if self.running:
+
             point, calibration, blink, fix, acceptance_radius, calibration_radius = self.eyeTracker.step()
 
             self.tracker.setPosition(point[0], point[1])
+
+            hand_x, hand_y = self.eyeTracker.getHand(point[0], point[1])
+            if int(hand_x) == int(point[0]) and int(hand_y) == int(point[1]):
+                self.handTracker.hide()
+            else:
+                self.handTracker.show()
+                self.handTracker.setPosition(hand_x, hand_y)
 
             if self.calibrationON:
                 self.calibrationWidget.setPosition(calibration[0], calibration[1])

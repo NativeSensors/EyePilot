@@ -4,6 +4,7 @@ import numpy as np
 import sklearn.linear_model as scireg
 from eyeGestures.utils import VideoCapture
 from eyeGestures import EyeGestures_v3
+from handGestures import Hand, HandFinder
 
 from screeninfo import get_monitors
 
@@ -34,6 +35,16 @@ class Tracker:
 
         self.calibration = False
 
+        ## hand tracker:
+        self.handsFinder = HandFinder()
+        self.hand = Hand(
+            pinchStart  = self.pinch_activated,
+            pinchActive = self.pinch_hold,
+            pinchRelease= self.pinch_released)
+        self.prev_cursor = [0,0]
+        self.hand_x = 0
+        self.hand_y = 0
+
     def start(self):
         self.cap = VideoCapture(0)
 
@@ -58,8 +69,37 @@ class Tracker:
     def reset(self):
         self.gestures.reset()
 
+    def pinch_activated(self,pos):
+        pass
+
+    def pinch_hold(self,pos):
+        pass
+
+    def pinch_released(self,pos):
+        pass
+
     def step(self):
         _, frame = self.cap.read()
+
         event, cevent = self.gestures.step(frame,self.calibration,self.monitor.width,self.monitor.height,context="main")
+        ret = self.hand.process(self.monitor.width,self.monitor.height,self.handsFinder.find(frame))
+
+        if ret:
+            print(f"here: {ret}")
+            cursor,_,_ = ret
+            cursor[1] = cursor[2] * 1000
+            dx,dy = cursor[0] - self.prev_cursor[0], cursor[1] - self.prev_cursor[1]
+            self.prev_cursor[0], self.prev_cursor[1] = cursor[0], cursor[1]
+            self.hand_x -= dx
+            self.hand_y += dy
+        else:
+            print("set to zero")
+            self.hand_x = 0
+            self.hand_y = 0
+            print(self.hand_x,self.hand_y)
 
         return (event.point, cevent.point, event.blink, event.fixation, cevent.acceptance_radius, cevent.calibration_radius)
+
+    def getHand(self,base_x,base_y):
+        print(self.hand_x,self.hand_y)
+        return (base_x + self.hand_x, base_y + self.hand_y)
