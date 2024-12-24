@@ -44,6 +44,8 @@ class Tracker:
         self.prev_cursor = [0,0]
         self.hand_x = 0
         self.hand_y = 0
+        self.base_x = 0
+        self.base_y = 0
 
     def start(self):
         self.cap = VideoCapture(0)
@@ -85,7 +87,6 @@ class Tracker:
         ret = self.hand.process(self.monitor.width,self.monitor.height,self.handsFinder.find(frame))
 
         if ret:
-            print(f"here: {ret}")
             cursor,_,_ = ret
             cursor[1] = cursor[2] * 1000
             dx,dy = cursor[0] - self.prev_cursor[0], cursor[1] - self.prev_cursor[1]
@@ -93,13 +94,21 @@ class Tracker:
             self.hand_x -= dx
             self.hand_y += dy
         else:
-            print("set to zero")
             self.hand_x = 0
             self.hand_y = 0
-            print(self.hand_x,self.hand_y)
+            self.base_x = 0
+            self.base_y = 0
 
         return (event.point, cevent.point, event.blink, event.fixation, cevent.acceptance_radius, cevent.calibration_radius)
 
     def getHand(self,base_x,base_y):
         print(self.hand_x,self.hand_y)
-        return (base_x + self.hand_x, base_y + self.hand_y)
+
+        diff_base_x = abs(base_x - self.base_x)
+        diff_base_y = abs(base_y - self.base_y)
+
+        if diff_base_x + diff_base_y > 500:
+            self.base_x = base_x
+            self.base_y = base_y
+
+        return (self.base_x + self.hand_x, self.base_y + self.hand_y)
