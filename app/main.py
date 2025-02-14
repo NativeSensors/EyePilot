@@ -83,36 +83,47 @@ class EyeSocket:
     def __init__(self):
         self.HOST = '127.0.0.1'  # localhost
         self.PORT = 65432        # Port to listen on (use any free port > 1024)
+
         self.server_socket = None
-        self.thread = threading.Thread(target=self.acceptIncoming)
         self.running = False
+        self.thread = threading.Thread(target=self.acceptIncoming)
         self.clients = []
 
     def acceptIncoming(self):
-        try:
-            while self.running:
-                client_socket, client_address = self.server_socket.accept()
-                self.clients.append(client_socket, client_address)
-        except Exception as e:
-            print(f"Caught {e}")
-            pass
+        while self.running:
+            try:
+                if self.server_socket:
+                    client_socket, client_address = self.server_socket.accept()
+                    print(f"Accepting connection from: {client_socket}, {client_address} ")
+                    self.clients.append((client_socket, client_address))
+            except Exception as e:
+                print(f"Caught {e}")
+                pass
 
     def open(self):
         # Create a UDP socket
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.server_socket.bind((HOST, PORT))
-        self.running = True
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((self.HOST, self.PORT))
+        self.server_socket.listen(10)
+        if not self.running:
+            self.running = True
+            self.thread.start()
 
     def send(self,data : dict) -> None:
         if self.server_socket:
             message = json.dumps(data)
-            for client_socket, client_address in self.clients:
-                self.server_socket.sendto(message.encode(), client_address)
+            if len(self.clients):
+                self.server_socket.sendall(message.encode())
 
     def close(self,):
-        self.running = False
         self.server_socket.close()
         self.server_socket = None
+
+    def quit(self):
+        pass
+        # self.running = False
+        # self.thread.join()
+
 
 
 class MyMainWindow(QMainWindow):
@@ -185,7 +196,7 @@ class MyMainWindow(QMainWindow):
         right_frame.setSignal("Settings","Cursor OFF/ON",signal=self.feature_cursor)
         right_frame.setSignal("Settings","Window Focus",signal=self.feature_focus)
         right_frame.setSignal("Settings","Display Blur",signal=self.feature_blur)
-        right_frame.setSignal("Settings","Port open [WiP]",signal=self.feature_port)
+        right_frame.setSignal("Settings","Port open",signal=self.feature_port)
 
         desktop = QDesktopWidget()
         self.screen_geometry = desktop.screenGeometry(desktop.primaryScreen())
@@ -395,20 +406,21 @@ class MyMainWindow(QMainWindow):
 
             self.tracker.setPosition(point[0], point[1])
 
-            hand_x, hand_y = self.eyeTracker.getHand(
-                point[0],
-                point[1],
-                click = self.onPress,
-                release = self.onRelease
-            )
-            if int(hand_x) == int(point[0]) and int(hand_y) == int(point[1]):
-                self.handTracker.hide()
-            else:
-                self.handTracker.show()
-                self.handTracker.setPosition(
-                    hand_x,
-                    hand_y,
-                )
+            # disable handtracking
+            # hand_x, hand_y = self.eyeTracker.getHand(
+            #     point[0],
+            #     point[1],
+            #     click = self.onPress,
+            #     release = self.onRelease
+            # )
+            # if int(hand_x) == int(point[0]) and int(hand_y) == int(point[1]):
+            #     self.handTracker.hide()
+            # else:
+            #     self.handTracker.show()
+            #     self.handTracker.setPosition(
+            #         hand_x,
+            #         hand_y,
+            #     )
 
             if self.calibrationON:
                 self.calibrationWidget.setPosition(calibration[0], calibration[1])
@@ -456,12 +468,11 @@ class MyMainWindow(QMainWindow):
                     )
 
                 if self.feature_status_port:
-                    print(self.feature_status_port)
                     payload = {
                         "x" : point[0],
                         "y" : point[1],
-                        "blink" : blink,
-                        "fixation" : fix,
+                        "blink" : int(blink),
+                        "fixation" : int(fix),
                     }
 
                     self.sock.send(payload)
